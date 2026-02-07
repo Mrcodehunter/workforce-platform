@@ -1,24 +1,25 @@
 using MongoDB.Driver;
+using WorkforceAPI.Models.MongoDB;
 
 namespace WorkforceAPI.Repositories;
 
 public class LeaveRequestRepository : ILeaveRequestRepository
 {
     private readonly IMongoDatabase _mongoDatabase;
-    private IMongoCollection<object>? _collection;
+    private IMongoCollection<LeaveRequest>? _collection;
 
     public LeaveRequestRepository(IMongoDatabase mongoDatabase)
     {
         _mongoDatabase = mongoDatabase;
     }
 
-    private IMongoCollection<object> Collection
+    private IMongoCollection<LeaveRequest> Collection
     {
         get
         {
             if (_collection == null)
             {
-                _collection = _mongoDatabase.GetCollection<object>("LeaveRequests");
+                _collection = _mongoDatabase.GetCollection<LeaveRequest>("LeaveRequests");
             }
             return _collection;
         }
@@ -26,7 +27,7 @@ public class LeaveRequestRepository : ILeaveRequestRepository
 
     public async Task<object?> GetByIdAsync(string id)
     {
-        var filter = Builders<object>.Filter.Eq("_id", id);
+        var filter = Builders<LeaveRequest>.Filter.Eq(x => x.Id, id);
         return await Collection.Find(filter).FirstOrDefaultAsync();
     }
 

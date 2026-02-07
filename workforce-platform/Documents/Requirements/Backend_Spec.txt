@@ -1,0 +1,38 @@
+
+#API Server (.NET 10)
+The primary backend service. It exposes a RESTful API consumed by the frontend and serves as the central coordination point for the system. You decide the endpoint structure, URL conventions, versioning strategy, and error handling approach.
+
+The API server must interact with both databases. The data access layer should use proper abstractions and dependency injection so that database-specific logic is isolated from business logic. The domain layer must remain database-agnostic—how you achieve this is up to you, but the separation must be clear and well-structured. This is where we evaluate your understanding of object-oriented design, interface segregation, and loose coupling.
+The API must publish domain events for all significant state changes (creation, updates, status transitions, deletions) to a message broker. Both background workers consume these events.
+
+#SQL Database
+Choose any SQL database: PostgreSQL, SQL Server, MySQL, or another relational engine. This database stores the structured, relational domain data where referential integrity and joins are essential. Document your choice and reasoning.
+
+This database must include seed data—enough to demonstrate pagination, filtering, and reporting meaningfully (at least 50 employee records with related project and task data). Use migrations for schema management.
+
+#MongoDB
+The document database for data that is naturally document-oriented: data that benefits from embedded structures, flexible schemas, and self-contained records. MongoDB also serves as the store for system-generated operational data such as audit logs and computed reports.
+
+Seed this database with matching leave request data for the seeded employees.
+
+#Message Broker
+All significant domain operations must publish events to a message broker. Both background workers subscribe to relevant events. You choose the broker technology and document your reasoning.
+
+#Background Worker 1 (.NET)
+A worker service built with .NET 10, running in its own container. This worker subscribes to domain events from the message broker and performs processing in response.
+
+Requirements
+Must handle transient failures gracefully with retry logic.
+Must be idempotent—reprocessing the same event must not corrupt data or create duplicates.
+Must expose a health indicator (endpoint, heartbeat log, or equivalent).
+
+What this worker does—which events it handles and what it produces—is your design decision. It must serve a clear, justified purpose in the overall system that you can explain.
+
+#Background Worker 2 (Node.js)
+A second worker service built with Node.js, running in its own container. This worker performs a different category of background work from Worker 1.
+
+Requirements
+Must serve a distinctly different purpose from Worker 1—not a duplicate in a different language.
+Must interact with at least one of the databases.
+Must have structured logging.
+You decide what this worker is responsible for. Common patterns include scheduled aggregation, data synchronization, notification processing, or periodic cleanup—but the choice is yours. Document why you chose Node.js for this particular task and .NET for the other.

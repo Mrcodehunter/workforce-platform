@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
+using Scalar.AspNetCore;
 using Serilog;
+using WorkforceAPI;
 using WorkforceAPI.Data;
 using WorkforceAPI.EventPublisher;
 using WorkforceAPI.Repositories;
@@ -19,7 +21,7 @@ builder.Host.UseSerilog();
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+builder.Services.AddOpenApi();
 
 // Database Configuration
 // PostgreSQL
@@ -33,27 +35,17 @@ var mongoClient = new MongoClient(mongoConnection);
 var mongoDatabase = mongoClient.GetDatabase(builder.Configuration["MongoDB:DatabaseName"]);
 builder.Services.AddSingleton<IMongoDatabase>(mongoDatabase);
 
+// Database Seeder
+builder.Services.AddScoped<DatabaseSeeder>();
+
 // RabbitMQ Event Publisher
 builder.Services.AddSingleton<IRabbitMqPublisher, RabbitMqPublisher>();
 
 // Repositories
-builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
-builder.Services.AddScoped<IDepartmentRepository, DepartmentRepository>();
-builder.Services.AddScoped<IDesignationRepository, DesignationRepository>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-builder.Services.AddScoped<ITaskRepository, TaskRepository>();
-builder.Services.AddScoped<ILeaveRequestRepository, LeaveRequestRepository>();
-builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
-builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddRepositories();
 
 // Services
-builder.Services.AddScoped<IEmployeeService, EmployeeService>();
-builder.Services.AddScoped<IDepartmentService, DepartmentService>();
-builder.Services.AddScoped<IDesignationService, DesignationService>();
-builder.Services.AddScoped<IProjectService, ProjectService>();
-builder.Services.AddScoped<ITaskService, TaskService>();
-builder.Services.AddScoped<ILeaveRequestService, LeaveRequestService>();
-builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddApplicationServices();
 
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
@@ -74,12 +66,19 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
+    // Map OpenAPI endpoint
+    app.MapOpenApi();
+    
+    // Map Scalar API documentation UI at root path
+    app.MapScalarApiReference(options =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Workforce Management API v1");
-        c.RoutePrefix = string.Empty; // Swagger at root
+        options
+            .WithTitle("Workforce Management API")
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
     });
+    
+    // Redirect root to Scalar documentation
+    app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 }
 
 app.UseCors("AllowFrontend");
@@ -93,6 +92,9 @@ app.MapGet("/health", () => Results.Ok(new {
     status = "healthy", 
     timestamp = DateTime.UtcNow 
 }));
+
+// Initialize database (migrations and seeding)
+await app.Services.SeedDatabaseAsync();
 
 Log.Information("Starting Workforce Management API");
 
