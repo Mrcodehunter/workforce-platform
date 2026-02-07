@@ -1,0 +1,17 @@
+Docker & Infrastructure
+The entire stack must be orchestrated with Docker Compose. Your compose file should define at minimum the following containers:
+
+1. API Server (.NET 10)
+2. Frontend (React, served via a web server or dev server)
+3. SQL Database (your choice)
+4. MongoDB
+5. Message Broker (your choice)
+6. Background Worker 1 (.NET)
+7. Background Worker 2 (Node.js)
+
+Expectations
+1. All services must start with: docker compose up --build
+2. Use multi-stage Dockerfiles to minimize image sizes.
+3. All configuration (connection strings, broker URLs, ports) must be via environment variables—no hardcoded secrets or connection strings in code.
+4. Proper health checks and startup dependency ordering.
+5. Volumes for database persistence during development.

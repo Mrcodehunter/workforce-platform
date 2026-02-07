@@ -1,0 +1,10 @@
+CI/CD Pipeline
+Set up a CI/CD pipeline that runs on every push to the main branch. You choose the CI platform.
+
+1. Minimum Pipeline Stages
+2. Build — Compile and build all services (backend, frontend, workers).
+3. Test — Run any automated tests.
+4. Lint / Static Analysis — Run linters for both frontend and backend.
+5. Docker Build — Build all Docker images to verify they compile correctly.
+
+The pipeline must pass on the main branch. Include a status badge in your README.

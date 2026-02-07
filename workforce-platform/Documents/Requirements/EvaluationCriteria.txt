@@ -1,0 +1,23 @@
+Evaluation Criteria
+Submission will be evaluated across the following areas:
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Area			|	Weight	|	What We Look For													|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Architecture & Design	|	20%	|	Clean separation of concerns, proper abstractions, dependency injection, domain-driven thinking, OOP depth		|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Decision Making		|	15%	|	Technology choices with clear rationale, trade-off awareness, API design decisions, schema design			|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	AI Workflow & Tooling	|	20%	|	Quality of AI documentation, evidence of planning with AI, prompt iteration, honest reflection on AI effectiveness	|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Feature Completeness	|	15%	|	All three domains working, both workers operational, cross-database views rendering correctly				|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Frontend Quality	|	10%	|	Component design, UI/UX polish, responsiveness, proper use of design system, composite views				|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	DevOps & Infrastructure	|	10%	|	Docker Compose correctness, CI/CD pipeline, environment configuration, health checks					|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Code Quality & Testing	|	5%	|	Naming, readability, test coverage, meaningful commit history								|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+|	Bonus Items		|	5%	|	Live deployment, advanced search, API docs, E2E tests, dashboard charts, audit log UI					|
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+

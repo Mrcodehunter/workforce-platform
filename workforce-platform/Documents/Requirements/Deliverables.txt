@@ -1,0 +1,7 @@
+Deliverables
+1. A public GitHub repository.
+2. Commit history showing incremental progress with meaningful commit messages—not a single giant commit.
+3. A working Docker Compose setup: docker compose up --build must bring up the entire system.
+4. A passing CI/CD pipeline with a status badge in the README.
+5. An AI-WORKFLOW.md documenting your AI-assisted development process.
+6. A comprehensive README including: project overview, architecture diagram (Mermaid, draw.io, or image), setup instructions, environment variables, justification for every major technology choice, and known limitations.

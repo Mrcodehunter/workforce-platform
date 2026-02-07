@@ -1,0 +1,9 @@
+Bonus Points:
+1. Live Deployment — Host the application on any cloud provider and share the URL.
+2. API Documentation — Auto-generated and accessible within the running application.
+3. Full-Text Search — Implement meaningful search across employees, projects, and leave requests.
+4. Dashboard Charts — Visual summaries using any charting library.
+5. ts — AE2E Tesutomated tests covering core user flows.
+6. Integration Tests — Tests that run against real database instances.
+7. Audit Log Browser — A dedicated UI for browsing and filtering the full audit log.
+8. Notification System — Real-time or near-real-time notifications for events like leave approvals.

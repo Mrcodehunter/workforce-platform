@@ -1,0 +1,12 @@
+AI Workflow Documentation
+AI-assisted development is a requirement of this assignment. You must use AI coding agents throughout your development workflow. We do not evaluate you on whether you used AI—we evaluate you on how well you used it.
+
+**Include a dedicated AI-WORKFLOW.md file in your repository covering the following:
+
+1. Tools Used — Which AI tools and models did you use, and for what purpose?
+2. Planning — How did you use AI to plan the architecture and make design decisions?
+3. Code Generation — Which parts were primarily AI-generated vs. hand-written? How did you review and validate generated code?
+4. Debugging & Iteration — Describe at least one case where AI-generated code failed and how you resolved it.
+5. Model Behaviour — If you used multiple models or tools, note differences you observed in output quality or behaviour.
+6. Reflection — Where did AI help the most? Where did it fall short? What would you do differently?
+
