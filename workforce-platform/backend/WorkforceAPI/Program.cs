@@ -19,14 +19,7 @@ builder.Host.UseSerilog();
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new() { 
-        Title = "Workforce Management API", 
-        Version = "v1",
-        Description = "A distributed workforce management platform"
-    });
-});
+    builder.Services.AddSwaggerGen();
 
 // Database Configuration
 // PostgreSQL

@@ -113,7 +113,7 @@ workforce-platform/
 ## 🛠️ Technology Stack
 
 ### Backend
-- **.NET 8.0** - Web API and Worker Services
+- **.NET 10.0** - Web API and Worker Services
 - **Entity Framework Core** - PostgreSQL ORM
 - **MongoDB Driver** - Document database client
 - **RabbitMQ.Client** - Message broker integration
