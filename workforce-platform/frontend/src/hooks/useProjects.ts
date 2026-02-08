@@ -51,3 +51,29 @@ export const useDeleteProject = () => {
     },
   });
 };
+
+export const useAddProjectMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, employeeId, role }: { projectId: string; employeeId: string; role?: string }) =>
+      projectsApi.addMember(projectId, employeeId, role),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId] });
+    },
+  });
+};
+
+export const useRemoveProjectMember = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ projectId, employeeId }: { projectId: string; employeeId: string }) =>
+      projectsApi.removeMember(projectId, employeeId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', variables.projectId] });
+    },
+  });
+};

@@ -85,4 +85,29 @@ public class ProjectRepository : IProjectRepository
             await _context.SaveChangesAsync();
         }
     }
+
+    public async Task<bool> IsMemberAsync(Guid projectId, Guid employeeId)
+    {
+        return await _context.ProjectMembers
+            .AnyAsync(pm => pm.ProjectId == projectId && pm.EmployeeId == employeeId);
+    }
+
+    public async Task<ProjectMember> AddMemberAsync(ProjectMember member)
+    {
+        _context.ProjectMembers.Add(member);
+        await _context.SaveChangesAsync();
+        return member;
+    }
+
+    public async System.Threading.Tasks.Task RemoveMemberAsync(Guid projectId, Guid employeeId)
+    {
+        var member = await _context.ProjectMembers
+            .FirstOrDefaultAsync(pm => pm.ProjectId == projectId && pm.EmployeeId == employeeId);
+        
+        if (member != null)
+        {
+            _context.ProjectMembers.Remove(member);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

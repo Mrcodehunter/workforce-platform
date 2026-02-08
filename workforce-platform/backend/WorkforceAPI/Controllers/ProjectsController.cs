@@ -285,4 +285,89 @@ public class ProjectsController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while creating the task" });
         }
     }
+
+    /// <summary>
+    /// Add a member to a project
+    /// </summary>
+    /// <param name="id">Project ID</param>
+    /// <param name="request">Member assignment request</param>
+    /// <returns>Updated project details</returns>
+    [HttpPost("{id}/members")]
+    [ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProjectDetailDto>> AddMember(Guid id, [FromBody] AddProjectMemberRequestDto request)
+    {
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var project = await _projectService.AddMemberAsync(id, request.EmployeeId, request.Role);
+            return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation adding member to project {ProjectId}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding member to project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while adding the member" });
+        }
+    }
+
+    /// <summary>
+    /// Remove a member from a project
+    /// </summary>
+    /// <param name="id">Project ID</param>
+    /// <param name="employeeId">Employee ID</param>
+    /// <returns>Updated project details</returns>
+    [HttpDelete("{id}/members/{employeeId}")]
+    [ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ProjectDetailDto>> RemoveMember(Guid id, Guid employeeId)
+    {
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
+
+            if (employeeId == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid employee ID" });
+            }
+
+            var project = await _projectService.RemoveMemberAsync(id, employeeId);
+            return Ok(project);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation removing member from project {ProjectId}", id);
+            
+            // Check if it's a "not found" type error
+            if (ex.Message.Contains("not found") || ex.Message.Contains("not a member"))
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing member from project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while removing the member" });
+        }
+    }
 }

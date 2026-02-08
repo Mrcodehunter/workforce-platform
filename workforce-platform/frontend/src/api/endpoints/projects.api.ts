@@ -43,4 +43,23 @@ export const projectsApi = {
   delete: async (id: string): Promise<void> => {
     await apiClient.delete(`/projects/${id}`);
   },
+
+  /**
+   * Add a member to a project
+   */
+  addMember: async (projectId: string, employeeId: string, role?: string): Promise<Project> => {
+    const response = await apiClient.post<Project>(`/projects/${projectId}/members`, {
+      employeeId,
+      role,
+    });
+    return response.data;
+  },
+
+  /**
+   * Remove a member from a project
+   */
+  removeMember: async (projectId: string, employeeId: string): Promise<Project> => {
+    const response = await apiClient.delete<Project>(`/projects/${projectId}/members/${employeeId}`);
+    return response.data;
+  },
 };
