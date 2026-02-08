@@ -9,6 +9,9 @@ import { ProjectList } from './pages/ProjectList';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { ProjectCreate } from './pages/ProjectCreate';
 import { ProjectEdit } from './pages/ProjectEdit';
+import { LeaveRequestList } from './pages/LeaveRequestList';
+import { LeaveRequestCreate } from './pages/LeaveRequestCreate';
+import { AuditTrail } from './pages/AuditTrail';
 
 function App() {
   return (
@@ -24,7 +27,9 @@ function App() {
           <Route path="/projects/new" element={<ProjectCreate />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/projects/:id/edit" element={<ProjectEdit />} />
-          {/* More routes will be added as pages are created */}
+          <Route path="/leave-requests" element={<LeaveRequestList />} />
+          <Route path="/leave-requests/new" element={<LeaveRequestCreate />} />
+          <Route path="/audit" element={<AuditTrail />} />
         </Routes>
       </Layout>
     </Router>

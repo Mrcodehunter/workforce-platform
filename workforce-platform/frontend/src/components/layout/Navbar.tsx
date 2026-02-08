@@ -6,7 +6,7 @@ const navigation = [
   { name: 'Dashboard', href: '/', icon: BarChart3 },
   { name: 'Employees', href: '/employees', icon: Users },
   { name: 'Projects', href: '/projects', icon: FolderKanban },
-  { name: 'Leave Requests', href: '/leaves', icon: Calendar },
+  { name: 'Leave Requests', href: '/leave-requests', icon: Calendar },
   { name: 'Audit Trail', href: '/audit', icon: Activity },
 ];
 

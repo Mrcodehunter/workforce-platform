@@ -25,8 +25,56 @@ public class AuditLogRepository : IAuditLogRepository
         }
     }
 
-    public async Task<IEnumerable<object>> GetAllAsync()
+    public async Task<IEnumerable<AuditLog>> GetAllAsync()
     {
-        return await Collection.Find(_ => true).ToListAsync();
+        return await Collection.Find(_ => true)
+            .SortByDescending(x => x.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetRecentAsync(int limit = 100)
+    {
+        return await Collection.Find(_ => true)
+            .SortByDescending(x => x.Timestamp)
+            .Limit(limit)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByEntityTypeAsync(string entityType)
+    {
+        var filter = Builders<AuditLog>.Filter.Eq(x => x.EntityType, entityType);
+        return await Collection.Find(filter)
+            .SortByDescending(x => x.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByEntityIdAsync(string entityType, string entityId)
+    {
+        var filter = Builders<AuditLog>.Filter.And(
+            Builders<AuditLog>.Filter.Eq(x => x.EntityType, entityType),
+            Builders<AuditLog>.Filter.Eq(x => x.EntityId, entityId)
+        );
+        return await Collection.Find(filter)
+            .SortByDescending(x => x.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByEventTypeAsync(string eventType)
+    {
+        var filter = Builders<AuditLog>.Filter.Eq(x => x.EventType, eventType);
+        return await Collection.Find(filter)
+            .SortByDescending(x => x.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<AuditLog>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        var filter = Builders<AuditLog>.Filter.And(
+            Builders<AuditLog>.Filter.Gte(x => x.Timestamp, startDate),
+            Builders<AuditLog>.Filter.Lte(x => x.Timestamp, endDate)
+        );
+        return await Collection.Find(filter)
+            .SortByDescending(x => x.Timestamp)
+            .ToListAsync();
     }
 }

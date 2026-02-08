@@ -37,6 +37,10 @@ public class ProjectRepository : IProjectRepository
     {
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
+        
+        // Detach the entity to force fresh reload with navigation properties
+        _context.Entry(project).State = EntityState.Detached;
+        
         return project;
     }
 
@@ -44,7 +48,31 @@ public class ProjectRepository : IProjectRepository
     {
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
+        
+        // Detach the entity to force fresh reload
+        _context.Entry(project).State = EntityState.Detached;
+        
         return project;
+    }
+
+    public async Task<Project?> ReloadWithNavigationPropertiesAsync(Guid id)
+    {
+        // Detach any existing tracked entity with this ID
+        var tracked = await _context.Projects.FindAsync(id);
+        if (tracked != null)
+        {
+            _context.Entry(tracked).State = EntityState.Detached;
+        }
+        
+        // Reload fresh from database with all navigation properties
+        return await _context.Projects
+            .Include(p => p.ProjectMembers)
+                .ThenInclude(pm => pm.Employee)
+            .Include(p => p.Tasks.Where(t => !t.IsDeleted))
+                .ThenInclude(t => t.AssignedToEmployee)
+            .AsSplitQuery()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
     }
 
     public async System.Threading.Tasks.Task DeleteAsync(Guid id)

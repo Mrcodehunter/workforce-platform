@@ -1,7 +1,10 @@
+using System.Text.Json;
 using WorkforceAPI.Models;
 using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Repositories;
-using WorkforceAPI.EventPublisher;
+using Workforce.Shared.Cache;
+using Workforce.Shared.EventPublisher;
+using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
@@ -9,11 +12,13 @@ public class TaskService : ITaskService
 {
     private readonly ITaskRepository _repository;
     private readonly IRabbitMqPublisher _eventPublisher;
+    private readonly IRedisCache _redisCache;
 
-    public TaskService(ITaskRepository repository, IRabbitMqPublisher eventPublisher)
+    public TaskService(ITaskRepository repository, IRabbitMqPublisher eventPublisher, IRedisCache redisCache)
     {
         _repository = repository;
         _eventPublisher = eventPublisher;
+        _redisCache = redisCache;
     }
 
     public async Task<IEnumerable<TaskListDto>> GetAllAsync()
@@ -140,6 +145,12 @@ public class TaskService : ITaskService
         task.CreatedAt = DateTime.UtcNow;
         task.UpdatedAt = DateTime.UtcNow;
         task.IsDeleted = false;
+        
+        // Set default status if not provided
+        if (string.IsNullOrWhiteSpace(task.Status))
+        {
+            task.Status = "ToDo";
+        }
 
         // Clear navigation properties to avoid tracking issues
         task.Project = null;
@@ -149,7 +160,19 @@ public class TaskService : ITaskService
         
         // Reload with navigation properties for event
         var reloaded = await _repository.GetByIdAsync(result.Id);
-        await _eventPublisher.PublishEventAsync("task.created", new { TaskId = result.Id, ProjectId = result.ProjectId });
+        
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "after" snapshot and store in Redis BEFORE publishing event
+        if (reloaded != null)
+        {
+            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        }
+        
+        // Publish event after Redis key is set
+        await _eventPublisher.PublishEventAsync(AuditEventType.TaskCreated, new { TaskId = result.Id, ProjectId = result.ProjectId }, eventId);
         
         return reloaded ?? result;
     }
@@ -161,6 +184,16 @@ public class TaskService : ITaskService
         {
             throw new InvalidOperationException($"Task with ID {task.Id} not found");
         }
+
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        var beforeSnapshot = JsonSerializer.Serialize(existingTask, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+        
+        // Publish event after Redis key is set
+        await _eventPublisher.PublishEventAsync(AuditEventType.TaskUpdated, new { TaskId = task.Id, ProjectId = task.ProjectId }, eventId);
 
         // Update only the properties that should be updated
         existingTask.Title = task.Title;
@@ -174,9 +207,13 @@ public class TaskService : ITaskService
 
         var result = await _repository.UpdateAsync(existingTask);
         
-        // Reload with navigation properties
+        // Reload with navigation properties and capture "after" snapshot
         var reloaded = await _repository.GetByIdAsync(result.Id);
-        await _eventPublisher.PublishEventAsync("task.updated", new { TaskId = result.Id, ProjectId = result.ProjectId });
+        if (reloaded != null)
+        {
+            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        }
         
         return reloaded ?? result;
     }
@@ -189,21 +226,49 @@ public class TaskService : ITaskService
             throw new InvalidOperationException($"Task with ID {taskId} not found");
         }
 
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        var beforeSnapshot = JsonSerializer.Serialize(task, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+        
+        // Publish event after Redis key is set
+        await _eventPublisher.PublishEventAsync(AuditEventType.TaskStatusUpdated, new { TaskId = taskId, Status = status, ProjectId = task.ProjectId }, eventId);
+
         task.Status = status;
         task.UpdatedAt = DateTime.UtcNow;
 
         var result = await _repository.UpdateAsync(task);
         
-        // Reload with navigation properties
+        // Reload with navigation properties and capture "after" snapshot
         var reloaded = await _repository.GetByIdAsync(result.Id);
-        await _eventPublisher.PublishEventAsync("task.status.updated", new { TaskId = result.Id, Status = status, ProjectId = result.ProjectId });
+        if (reloaded != null)
+        {
+            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        }
         
         return reloaded ?? result;
     }
 
     public async Task DeleteAsync(Guid id)
     {
+        // Capture "before" snapshot before deletion
+        var existingTask = await _repository.GetByIdAsync(id);
+        if (existingTask != null)
+        {
+            // Generate event ID first
+            var eventId = Guid.NewGuid().ToString();
+            
+            // Store "before" snapshot in Redis BEFORE publishing event
+            var beforeSnapshot = JsonSerializer.Serialize(existingTask, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+            
+            // Publish event after Redis key is set
+            await _eventPublisher.PublishEventAsync(AuditEventType.TaskDeleted, new { TaskId = id }, eventId);
+        }
+        
         await _repository.DeleteAsync(id);
-        await _eventPublisher.PublishEventAsync("task.deleted", new { TaskId = id });
     }
 }

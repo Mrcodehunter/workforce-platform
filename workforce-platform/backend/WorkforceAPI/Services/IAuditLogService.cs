@@ -1,8 +1,8 @@
 using WorkforceAPI.Models.MongoDB;
 
-namespace WorkforceAPI.Repositories;
+namespace WorkforceAPI.Services;
 
-public interface IAuditLogRepository
+public interface IAuditLogService
 {
     Task<IEnumerable<AuditLog>> GetAllAsync();
     Task<IEnumerable<AuditLog>> GetRecentAsync(int limit = 100);
