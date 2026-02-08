@@ -1,7 +1,10 @@
+using System.Text.Json;
 using WorkforceAPI.Models;
 using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Repositories;
-using WorkforceAPI.EventPublisher;
+using Workforce.Shared.Cache;
+using Workforce.Shared.EventPublisher;
+using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
@@ -9,11 +12,13 @@ public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _repository;
     private readonly IRabbitMqPublisher _eventPublisher;
+    private readonly IRedisCache _redisCache;
 
-    public ProjectService(IProjectRepository repository, IRabbitMqPublisher eventPublisher)
+    public ProjectService(IProjectRepository repository, IRabbitMqPublisher eventPublisher, IRedisCache redisCache)
     {
         _repository = repository;
         _eventPublisher = eventPublisher;
+        _redisCache = redisCache;
     }
 
     public async Task<IEnumerable<ProjectListDto>> GetAllAsync()
@@ -98,9 +103,25 @@ public class ProjectService : IProjectService
 
         var result = await _repository.CreateAsync(project);
         
-        // Reload with navigation properties for event
-        var reloaded = await _repository.GetByIdAsync(result.Id);
-        await _eventPublisher.PublishEventAsync("project.created", new { ProjectId = result.Id });
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Reload with navigation properties for event using fresh query
+        var reloaded = await _repository.ReloadWithNavigationPropertiesAsync(result.Id);
+        
+        // Capture "after" snapshot and store in Redis BEFORE publishing event
+        if (reloaded != null)
+        {
+            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions 
+            { 
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+                WriteIndented = false
+            });
+            await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        }
+        
+        // Publish event after Redis key is set
+        await _eventPublisher.PublishEventAsync(AuditEventType.ProjectCreated, new { ProjectId = result.Id }, eventId);
         
         return reloaded ?? result;
     }
@@ -113,6 +134,16 @@ public class ProjectService : IProjectService
             throw new InvalidOperationException($"Project with ID {project.Id} not found");
         }
 
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        var beforeSnapshot = JsonSerializer.Serialize(existingProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+        
+        // Publish event after Redis key is set
+        await _eventPublisher.PublishEventAsync(AuditEventType.ProjectUpdated, new { ProjectId = project.Id }, eventId);
+
         // Update only the properties that should be updated
         existingProject.Name = project.Name;
         existingProject.Description = project.Description;
@@ -123,16 +154,39 @@ public class ProjectService : IProjectService
 
         var result = await _repository.UpdateAsync(existingProject);
         
-        // Reload with navigation properties
-        var reloaded = await _repository.GetByIdAsync(result.Id);
-        await _eventPublisher.PublishEventAsync("project.updated", new { ProjectId = result.Id });
+        // Reload with navigation properties and capture "after" snapshot
+        // Use ReloadWithNavigationPropertiesAsync to get fresh data from database
+        var reloaded = await _repository.ReloadWithNavigationPropertiesAsync(result.Id);
+        if (reloaded != null)
+        {
+            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions 
+            { 
+                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
+                WriteIndented = false
+            });
+            await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        }
         
         return reloaded ?? result;
     }
 
     public async System.Threading.Tasks.Task DeleteAsync(Guid id)
     {
+        // Capture "before" snapshot before deletion
+        var existingProject = await _repository.GetByIdAsync(id);
+        if (existingProject != null)
+        {
+            // Generate event ID first
+            var eventId = Guid.NewGuid().ToString();
+            
+            // Store "before" snapshot in Redis BEFORE publishing event
+            var beforeSnapshot = JsonSerializer.Serialize(existingProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+            
+            // Publish event after Redis key is set
+            await _eventPublisher.PublishEventAsync(AuditEventType.ProjectDeleted, new { ProjectId = id }, eventId);
+        }
+        
         await _repository.DeleteAsync(id);
-        await _eventPublisher.PublishEventAsync("project.deleted", new { ProjectId = id });
     }
 }

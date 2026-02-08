@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using Serilog;
 using WorkforceAPI.Data;
-using WorkforceAPI.EventPublisher;
 using WorkforceAPI.Repositories;
 using WorkforceAPI.Services;
 
@@ -38,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectService, ProjectService>();
         services.AddScoped<ITaskService, TaskService>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<IDashboardService, DashboardService>();
 
         return services;

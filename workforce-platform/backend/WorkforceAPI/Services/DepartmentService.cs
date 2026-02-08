@@ -1,6 +1,7 @@
 using WorkforceAPI.Models;
 using WorkforceAPI.Repositories;
-using WorkforceAPI.EventPublisher;
+using Workforce.Shared.EventPublisher;
+using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
@@ -28,20 +29,20 @@ public class DepartmentService : IDepartmentService
     public async Task<Department> CreateAsync(Department department)
     {
         var result = await _repository.CreateAsync(department);
-        await _eventPublisher.PublishEventAsync("department.created", new { DepartmentId = result.Id });
+        await _eventPublisher.PublishEventAsync(AuditEventType.DepartmentCreated, new { DepartmentId = result.Id });
         return result;
     }
 
     public async Task<Department> UpdateAsync(Department department)
     {
         var result = await _repository.UpdateAsync(department);
-        await _eventPublisher.PublishEventAsync("department.updated", new { DepartmentId = result.Id });
+        await _eventPublisher.PublishEventAsync(AuditEventType.DepartmentUpdated, new { DepartmentId = result.Id });
         return result;
     }
 
     public async System.Threading.Tasks.Task DeleteAsync(Guid id)
     {
         await _repository.DeleteAsync(id);
-        await _eventPublisher.PublishEventAsync("department.updated", new { DepartmentId = id });
+        await _eventPublisher.PublishEventAsync(AuditEventType.DepartmentDeleted, new { DepartmentId = id });
     }
 }

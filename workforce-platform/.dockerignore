@@ -1,0 +1,20 @@
+# Exclude old Cache and EventPublisher directories that were moved to Workforce.Shared
+backend/WorkforceAPI/Cache/
+backend/WorkforceAPI/EventPublisher/
+backend/WorkerService.AuditLogger/Cache/
+backend/WorkerService.AuditLogger/EventPublisher/
+
+# Build artifacts
+**/bin/
+**/obj/
+**/.vs/
+**/.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+Documents/
+AI_Planning/
+AI_Interaction_History/

@@ -164,7 +164,7 @@ export function EmployeeList() {
                       </td>
                       <td className="p-2">{employee.email}</td>
                       <td className="p-2">
-                        {departments?.find((d) => d.id === employee.departmentId)?.name || 'N/A'}
+                        {employee.department?.name || departments?.find((d) => d.id === employee.departmentId)?.name || 'N/A'}
                       </td>
                       <td className="p-2">
                         <span

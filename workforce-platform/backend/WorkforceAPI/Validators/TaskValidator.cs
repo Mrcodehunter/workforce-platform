@@ -20,8 +20,8 @@ public class TaskValidator : AbstractValidator<TaskItem>
             .NotEqual(Guid.Empty).WithMessage("Project is required");
 
         RuleFor(x => x.Status)
-            .NotEmpty().WithMessage("Status is required")
-            .Must(BeValidStatus).WithMessage("Status must be one of: ToDo, InProgress, InReview, Done, Cancelled");
+            .Must(BeValidStatus).WithMessage("Status must be one of: ToDo, InProgress, InReview, Done, Cancelled")
+            .When(x => !string.IsNullOrWhiteSpace(x.Status));
 
         RuleFor(x => x.Priority)
             .InclusiveBetween(0, 3).WithMessage("Priority must be between 0 (Low) and 3 (Critical)");

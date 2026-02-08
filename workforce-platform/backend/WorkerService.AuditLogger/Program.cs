@@ -3,6 +3,8 @@ using Serilog;
 using WorkerService.AuditLogger;
 using WorkerService.AuditLogger.Services;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Workforce.Shared.Cache;
+using Workforce.Shared.DependencyInjection;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -19,6 +21,9 @@ var mongoConnection = builder.Configuration.GetConnectionString("MongoDB");
 var mongoClient = new MongoClient(mongoConnection);
 var mongoDatabase = mongoClient.GetDatabase(builder.Configuration["MongoDB:DatabaseName"]);
 builder.Services.AddSingleton<IMongoDatabase>(mongoDatabase);
+
+// Redis Configuration (from shared library)
+builder.Services.AddRedisCache(builder.Configuration);
 
 // Services
 builder.Services.AddSingleton<IAuditLogService, AuditLogService>();

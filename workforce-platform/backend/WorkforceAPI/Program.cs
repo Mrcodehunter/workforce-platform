@@ -6,9 +6,11 @@ using Scalar.AspNetCore;
 using Serilog;
 using WorkforceAPI;
 using WorkforceAPI.Data;
-using WorkforceAPI.EventPublisher;
 using WorkforceAPI.Repositories;
 using WorkforceAPI.Services;
+using Workforce.Shared.Cache;
+using Workforce.Shared.DependencyInjection;
+using Workforce.Shared.EventPublisher;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,8 +54,11 @@ builder.Services.AddSingleton<IMongoDatabase>(mongoDatabase);
 // Database Seeder
 builder.Services.AddScoped<DatabaseSeeder>();
 
-// RabbitMQ Event Publisher
-builder.Services.AddSingleton<IRabbitMqPublisher, RabbitMqPublisher>();
+// Redis Cache (from shared library)
+builder.Services.AddRedisCache(builder.Configuration);
+
+// RabbitMQ Event Publisher (from shared library)
+builder.Services.AddRabbitMqPublisher();
 
 // Repositories
 builder.Services.AddRepositories();

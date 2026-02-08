@@ -6,7 +6,8 @@ import { Loading } from '../components/common/Loading';
 import { Error } from '../components/common/Error';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
 import { Button } from '../components/common/Button';
-import { ArrowLeft, Edit, Trash2, Calendar, Activity } from 'lucide-react';
+import { EntityAuditLog } from '../components/audit/EntityAuditLog';
+import { ArrowLeft, Edit, Trash2, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import type { LeaveRequest } from '../types';
 
@@ -17,10 +18,9 @@ export function EmployeeDetail() {
 
   const { data: employee, isLoading, error, refetch } = useEmployee(id!);
   const { data: leaveRequests } = useQuery({
-    queryKey: ['leaveRequests', id],
-    queryFn: leaveRequestsApi.getAll,
+    queryKey: ['leaveRequests', 'employee', id],
+    queryFn: () => leaveRequestsApi.getAll({ employeeId: id }),
     enabled: !!id,
-    select: (data) => data.filter((lr: LeaveRequest) => lr.employeeId === id),
   });
 
   const handleDelete = async () => {
@@ -202,19 +202,7 @@ export function EmployeeDetail() {
       </Card>
 
       {/* Audit Trail */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Activity className="h-5 w-5 mr-2" />
-            Audit Trail
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            Audit trail for this employee will be displayed here. (Requires audit log API endpoint)
-          </p>
-        </CardContent>
-      </Card>
+      {id && <EntityAuditLog entityType="Employee" entityId={id} />}
     </div>
   );
 }
