@@ -10,4 +10,6 @@ public interface IProjectService
     System.Threading.Tasks.Task<Project> CreateAsync(Project project);
     System.Threading.Tasks.Task<Project> UpdateAsync(Project project);
     System.Threading.Tasks.Task DeleteAsync(Guid id);
+    Task<ProjectDetailDto> AddMemberAsync(Guid projectId, Guid employeeId, string? role);
+    Task<ProjectDetailDto> RemoveMemberAsync(Guid projectId, Guid employeeId);
 }
