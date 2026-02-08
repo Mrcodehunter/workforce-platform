@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using WorkforceAPI.Models;
 using WorkforceAPI.Services;
 
@@ -11,11 +13,16 @@ public class EmployeesController : ControllerBase
 {
     private readonly IEmployeeService _employeeService;
     private readonly ILogger<EmployeesController> _logger;
+    private readonly IWebHostEnvironment _environment;
 
-    public EmployeesController(IEmployeeService employeeService, ILogger<EmployeesController> logger)
+    public EmployeesController(
+        IEmployeeService employeeService, 
+        ILogger<EmployeesController> logger,
+        IWebHostEnvironment environment)
     {
         _employeeService = employeeService;
         _logger = logger;
+        _environment = environment;
     }
 
     /// <summary>
@@ -46,21 +53,48 @@ public class EmployeesController : ControllerBase
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(Employee), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<Employee>> GetById(Guid id)
     {
         try
         {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid employee ID" });
+            }
+
             var employee = await _employeeService.GetByIdAsync(id);
             if (employee == null)
             {
+                _logger.LogWarning("Employee with ID {EmployeeId} not found", id);
                 return NotFound(new { message = $"Employee with ID {id} not found" });
             }
+
             return Ok(employee);
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error retrieving employee {EmployeeId}", id);
+            return StatusCode(500, new { 
+                message = "A database error occurred while retrieving the employee",
+                error = _environment.IsDevelopment() ? ex.Message : null
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation while retrieving employee {EmployeeId}", id);
+            return StatusCode(500, new { 
+                message = "An error occurred while retrieving the employee",
+                error = _environment.IsDevelopment() ? ex.Message : null
+            });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving employee {EmployeeId}", id);
-            return StatusCode(500, new { message = "An error occurred while retrieving the employee" });
+            _logger.LogError(ex, "Unexpected error retrieving employee {EmployeeId}: {Message}", id, ex.Message);
+            return StatusCode(500, new { 
+                message = "An unexpected error occurred while retrieving the employee",
+                error = _environment.IsDevelopment() ? ex.Message : null
+            });
         }
     }
 
@@ -76,18 +110,30 @@ public class EmployeesController : ControllerBase
     {
         try
         {
+            // FluentValidation automatically validates and populates ModelState
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Model validation failed: {ModelState}", ModelState);
                 return BadRequest(ModelState);
             }
 
             var createdEmployee = await _employeeService.CreateAsync(employee);
             return CreatedAtAction(nameof(GetById), new { id = createdEmployee.Id }, createdEmployee);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error creating employee");
+            if (ex.InnerException?.Message.Contains("duplicate") == true || 
+                ex.InnerException?.Message.Contains("unique") == true)
+            {
+                return BadRequest(new { message = "An employee with this email already exists" });
+            }
+            return StatusCode(500, new { message = "An error occurred while creating the employee" });
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating employee");
-            return StatusCode(500, new { message = "An error occurred while creating the employee" });
+            _logger.LogError(ex, "Error creating employee: {Message}", ex.Message);
+            return StatusCode(500, new { message = $"An error occurred while creating the employee: {ex.Message}" });
         }
     }
 
@@ -110,8 +156,10 @@ public class EmployeesController : ControllerBase
                 return BadRequest(new { message = "ID in URL does not match ID in body" });
             }
 
+            // FluentValidation automatically validates and populates ModelState
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Model validation failed: {ModelState}", ModelState);
                 return BadRequest(ModelState);
             }
 
@@ -124,10 +172,20 @@ public class EmployeesController : ControllerBase
             var updatedEmployee = await _employeeService.UpdateAsync(employee);
             return Ok(updatedEmployee);
         }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error updating employee {EmployeeId}", id);
+            if (ex.InnerException?.Message.Contains("duplicate") == true || 
+                ex.InnerException?.Message.Contains("unique") == true)
+            {
+                return BadRequest(new { message = "An employee with this email already exists" });
+            }
+            return StatusCode(500, new { message = "An error occurred while updating the employee" });
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating employee {EmployeeId}", id);
-            return StatusCode(500, new { message = "An error occurred while updating the employee" });
+            _logger.LogError(ex, "Error updating employee {EmployeeId}: {Message}", id, ex.Message);
+            return StatusCode(500, new { message = $"An error occurred while updating the employee: {ex.Message}" });
         }
     }
 
