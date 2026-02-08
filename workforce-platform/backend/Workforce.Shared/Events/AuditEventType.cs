@@ -14,6 +14,8 @@ public enum AuditEventType
     ProjectCreated,
     ProjectUpdated,
     ProjectDeleted,
+    ProjectMemberAdded,
+    ProjectMemberRemoved,
     
     // Task Events
     TaskCreated,
@@ -55,6 +57,8 @@ public static class AuditEventTypeExtensions
             AuditEventType.ProjectCreated => "project.created",
             AuditEventType.ProjectUpdated => "project.updated",
             AuditEventType.ProjectDeleted => "project.deleted",
+            AuditEventType.ProjectMemberAdded => "project.member.added",
+            AuditEventType.ProjectMemberRemoved => "project.member.removed",
             
             AuditEventType.TaskCreated => "task.created",
             AuditEventType.TaskUpdated => "task.updated",
@@ -89,7 +93,9 @@ public static class AuditEventTypeExtensions
             
             AuditEventType.ProjectCreated or 
             AuditEventType.ProjectUpdated or 
-            AuditEventType.ProjectDeleted => "Project",
+            AuditEventType.ProjectDeleted or
+            AuditEventType.ProjectMemberAdded or
+            AuditEventType.ProjectMemberRemoved => "Project",
             
             AuditEventType.TaskCreated or 
             AuditEventType.TaskUpdated or 

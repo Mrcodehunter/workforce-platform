@@ -219,6 +219,13 @@ public class ProjectService : IProjectService
             throw new InvalidOperationException($"Employee {employee.FirstName} {employee.LastName} is already a member of this project");
         }
 
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "before" snapshot (project before member addition)
+        var beforeSnapshot = JsonSerializer.Serialize(project, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+
         // Create project member
         var projectMember = new ProjectMember
         {
@@ -236,6 +243,13 @@ public class ProjectService : IProjectService
         {
             throw new InvalidOperationException($"Failed to reload project {projectId} after adding member");
         }
+        
+        // Capture "after" snapshot and store in Redis BEFORE publishing event
+        var afterSnapshot = JsonSerializer.Serialize(updatedProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        
+        // Publish event after Redis keys are set
+        await _eventPublisher.PublishEventAsync(AuditEventType.ProjectMemberAdded, new { ProjectId = projectId, EmployeeId = employeeId, Role = role }, eventId);
 
         // Convert to DTO
         return new ProjectDetailDto
@@ -300,6 +314,13 @@ public class ProjectService : IProjectService
             throw new InvalidOperationException($"Employee with ID {employeeId} is not a member of this project");
         }
 
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "before" snapshot (project before member removal)
+        var beforeSnapshot = JsonSerializer.Serialize(project, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+
         // Remove member
         await _repository.RemoveMemberAsync(projectId, employeeId);
 
@@ -309,6 +330,13 @@ public class ProjectService : IProjectService
         {
             throw new InvalidOperationException($"Failed to reload project {projectId} after removing member");
         }
+        
+        // Capture "after" snapshot and store in Redis BEFORE publishing event
+        var afterSnapshot = JsonSerializer.Serialize(updatedProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        
+        // Publish event after Redis keys are set
+        await _eventPublisher.PublishEventAsync(AuditEventType.ProjectMemberRemoved, new { ProjectId = projectId, EmployeeId = employeeId }, eventId);
 
         // Convert to DTO
         return new ProjectDetailDto

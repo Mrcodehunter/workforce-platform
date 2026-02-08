@@ -232,9 +232,6 @@ public class TaskService : ITaskService
         // Capture "before" snapshot and store in Redis BEFORE publishing event
         var beforeSnapshot = JsonSerializer.Serialize(task, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
-        
-        // Publish event after Redis key is set
-        await _eventPublisher.PublishEventAsync(AuditEventType.TaskStatusUpdated, new { TaskId = taskId, Status = status, ProjectId = task.ProjectId }, eventId);
 
         task.Status = status;
         task.UpdatedAt = DateTime.UtcNow;
@@ -248,6 +245,9 @@ public class TaskService : ITaskService
             var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
+        
+        // Publish event AFTER both before and after snapshots are stored in Redis
+        await _eventPublisher.PublishEventAsync(AuditEventType.TaskStatusUpdated, new { TaskId = taskId, Status = status, ProjectId = task.ProjectId }, eventId);
         
         return reloaded ?? result;
     }
