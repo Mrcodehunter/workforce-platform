@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using WorkforceAPI.Models;
+using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
@@ -30,8 +31,8 @@ public class EmployeesController : ControllerBase
     /// </summary>
     /// <returns>List of employees</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<Employee>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IEnumerable<Employee>>> GetAll()
+    [ProducesResponseType(typeof(IEnumerable<EmployeeListDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IEnumerable<EmployeeListDto>>> GetAll()
     {
         try
         {
@@ -51,10 +52,10 @@ public class EmployeesController : ControllerBase
     /// <param name="id">Employee ID</param>
     /// <returns>Employee details</returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Employee), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(EmployeeDetailDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<Employee>> GetById(Guid id)
+    public async Task<ActionResult<EmployeeDetailDto>> GetById(Guid id)
     {
         try
         {

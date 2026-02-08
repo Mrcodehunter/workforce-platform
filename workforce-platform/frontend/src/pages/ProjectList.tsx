@@ -73,12 +73,11 @@ export function ProjectList() {
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   <div className="flex items-center">
                     <Users className="h-4 w-4 mr-1" />
-                    {(project.projectMembers && Array.isArray(project.projectMembers) ? project.projectMembers.length : 0)} members
+                    {project.memberCount || 0} members
                   </div>
                   <div className="flex items-center">
                     <CheckCircle2 className="h-4 w-4 mr-1" />
-                    {(project.tasks && Array.isArray(project.tasks) ? project.tasks.filter((t) => t.status === 'Done').length : 0)}/
-                    {(project.tasks && Array.isArray(project.tasks) ? project.tasks.length : 0)} tasks
+                    {project.taskCount || 0} tasks
                   </div>
                 </div>
                 <div className="text-sm text-muted-foreground">

@@ -59,6 +59,18 @@ export interface Project {
   tasks?: TaskItem[];
 }
 
+// Project List Item (for list view - uses counts instead of full arrays)
+export interface ProjectListItem {
+  id: string;
+  name: string;
+  description?: string;
+  status: ProjectStatus;
+  startDate: string;
+  endDate?: string;
+  memberCount: number;
+  taskCount: number;
+}
+
 export type ProjectStatus = 'Planning' | 'Active' | 'OnHold' | 'Completed' | 'Cancelled';
 
 export interface ProjectMember {

@@ -6,6 +6,9 @@ import { EmployeeDetail } from './pages/EmployeeDetail';
 import { EmployeeCreate } from './pages/EmployeeCreate';
 import { EmployeeEdit } from './pages/EmployeeEdit';
 import { ProjectList } from './pages/ProjectList';
+import { ProjectDetail } from './pages/ProjectDetail';
+import { ProjectCreate } from './pages/ProjectCreate';
+import { ProjectEdit } from './pages/ProjectEdit';
 
 function App() {
   return (
@@ -18,6 +21,9 @@ function App() {
           <Route path="/employees/:id" element={<EmployeeDetail />} />
           <Route path="/employees/:id/edit" element={<EmployeeEdit />} />
           <Route path="/projects" element={<ProjectList />} />
+          <Route path="/projects/new" element={<ProjectCreate />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/projects/:id/edit" element={<ProjectEdit />} />
           {/* More routes will be added as pages are created */}
         </Routes>
       </Layout>

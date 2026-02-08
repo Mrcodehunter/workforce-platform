@@ -1,5 +1,5 @@
 import { apiClient } from '../config/axios.config';
-import type { Project } from '../../types';
+import type { Project, ProjectListItem } from '../../types';
 
 /**
  * Project API endpoints
@@ -8,8 +8,8 @@ export const projectsApi = {
   /**
    * Get all projects
    */
-  getAll: async (): Promise<Project[]> => {
-    const response = await apiClient.get<Project[]>('/projects');
+  getAll: async (): Promise<ProjectListItem[]> => {
+    const response = await apiClient.get<ProjectListItem[]>('/projects');
     return response.data;
   },
 

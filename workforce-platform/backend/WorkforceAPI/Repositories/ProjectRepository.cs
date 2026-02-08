@@ -15,19 +15,26 @@ public class ProjectRepository : IProjectRepository
 
     public async Task<IEnumerable<Project>> GetAllAsync()
     {
-        return await _context.Projects.Where(p => !p.IsDeleted).ToListAsync();
+        return await _context.Projects
+            .Include(p => p.ProjectMembers)
+            .Include(p => p.Tasks.Where(t => !t.IsDeleted))
+            .Where(p => !p.IsDeleted)
+            .ToListAsync();
     }
 
     public async Task<Project?> GetByIdAsync(Guid id)
     {
-        return await _context.Projects.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+        return await _context.Projects
+            .Include(p => p.ProjectMembers)
+                .ThenInclude(pm => pm.Employee)
+            .Include(p => p.Tasks.Where(t => !t.IsDeleted))
+                .ThenInclude(t => t.AssignedToEmployee)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
     }
 
     public async Task<Project> CreateAsync(Project project)
     {
-        project.Id = Guid.NewGuid();
-        project.CreatedAt = DateTime.UtcNow;
-        project.UpdatedAt = DateTime.UtcNow;
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
         return project;
@@ -35,7 +42,6 @@ public class ProjectRepository : IProjectRepository
 
     public async Task<Project> UpdateAsync(Project project)
     {
-        project.UpdatedAt = DateTime.UtcNow;
         _context.Projects.Update(project);
         await _context.SaveChangesAsync();
         return project;
@@ -43,7 +49,7 @@ public class ProjectRepository : IProjectRepository
 
     public async System.Threading.Tasks.Task DeleteAsync(Guid id)
     {
-        var project = await GetByIdAsync(id);
+        var project = await _context.Projects.FindAsync(id);
         if (project != null)
         {
             project.IsDeleted = true;
