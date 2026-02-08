@@ -59,7 +59,7 @@ That's it! Docker will handle all other dependencies.
 4. **Access the application**
    - **Frontend**: http://localhost:3000
    - **API**: http://localhost:5000
-   - **API Documentation (Swagger)**: http://localhost:5000
+   - **API Documentation (Scalar)**: http://localhost:5000 (auto-opens in browser)
    - **RabbitMQ Management**: http://localhost:15672 (guest/guest)
 
 ### First Time Setup
@@ -90,15 +90,17 @@ workforce-platform/
 │       └── Models/
 ├── frontend/                   # React Frontend
 │   ├── src/
+│   │   ├── api/               # API communication layer
+│   │   │   ├── config/        # Axios configuration & interceptors
+│   │   │   ├── endpoints/     # API endpoint definitions
+│   │   │   └── constants.ts   # API constants
 │   │   ├── components/        # React components
-│   │   │   ├── employees/
-│   │   │   ├── projects/
-│   │   │   ├── leaves/
-│   │   │   └── dashboard/
+│   │   │   ├── common/        # Reusable UI components
+│   │   │   └── layout/        # Layout components
 │   │   ├── pages/             # Page components
-│   │   ├── services/          # API client
 │   │   ├── hooks/             # Custom React hooks
-│   │   └── types/             # TypeScript types
+│   │   ├── types/             # TypeScript types
+│   │   └── utils/             # Utility functions
 │   └── public/
 ├── workers/                    # Background Workers
 │   └── report-generator/      # Node.js report worker
@@ -120,7 +122,7 @@ workforce-platform/
 - **Serilog** - Structured logging
 - **AutoMapper** - Object mapping
 - **FluentValidation** - Input validation
-- **Swashbuckle** - API documentation
+- **Scalar** - Modern API documentation (replaces Swagger)
 
 ### Frontend
 - **React 18** - UI framework
@@ -128,7 +130,7 @@ workforce-platform/
 - **Vite** - Build tool
 - **React Router** - Client-side routing
 - **Tailwind CSS** - Utility-first styling
-- **shadcn/ui** - Component library
+- **Tailwind CSS Components** - Custom component library
 - **Axios** - HTTP client
 - **React Query** - Server state management
 - **Recharts** - Data visualization
@@ -198,38 +200,52 @@ workforce-platform/
 
 ## 🌐 API Endpoints
 
-Base URL: `http://localhost:5000/api/v1`
+Base URL: `http://localhost:5000/api`
 
 ### Employees
-- `GET /api/v1/employees` - List employees (pagination, filtering, sorting)
-- `GET /api/v1/employees/{id}` - Get employee details
-- `POST /api/v1/employees` - Create employee
-- `PUT /api/v1/employees/{id}` - Update employee
-- `DELETE /api/v1/employees/{id}` - Soft delete employee
+- `GET /api/employees` - List all employees
+- `GET /api/employees/{id}` - Get employee details
+- `POST /api/employees` - Create employee
+- `PUT /api/employees/{id}` - Update employee
+- `DELETE /api/employees/{id}` - Delete employee
 
-### Projects & Tasks
-- `GET /api/v1/projects` - List projects
-- `GET /api/v1/projects/{id}` - Get project with tasks
-- `POST /api/v1/projects` - Create project
-- `POST /api/v1/projects/{id}/tasks` - Create task
-- `PUT /api/v1/tasks/{id}` - Update task
+### Departments
+- `GET /api/departments` - List all departments
+- `GET /api/departments/{id}` - Get department details
+- `POST /api/departments` - Create department
+- `PUT /api/departments/{id}` - Update department
+- `DELETE /api/departments/{id}` - Delete department
+
+### Designations
+- `GET /api/designations` - List all designations
+- `GET /api/designations/{id}` - Get designation details
+- `POST /api/designations` - Create designation
+
+### Projects
+- `GET /api/projects` - List all projects
+- `GET /api/projects/{id}` - Get project details
+- `POST /api/projects` - Create project
+- `PUT /api/projects/{id}` - Update project
+- `DELETE /api/projects/{id}` - Delete project
+
+### Tasks
+- `GET /api/tasks` - List all tasks
+- `GET /api/tasks/{id}` - Get task details
+- `POST /api/tasks` - Create task
+- `PUT /api/tasks/{id}` - Update task
+- `DELETE /api/tasks/{id}` - Delete task
 
 ### Leave Requests
-- `GET /api/v1/leaves` - List leave requests
-- `POST /api/v1/leaves` - Submit leave request
-- `PATCH /api/v1/leaves/{id}/approve` - Approve leave
-- `PATCH /api/v1/leaves/{id}/reject` - Reject leave
+- `GET /api/leaverequests` - List all leave requests
+- `GET /api/leaverequests/{id}` - Get leave request details
 
-### Dashboard & Reports
-- `GET /api/v1/dashboard/summary` - Get dashboard data
-- `GET /api/v1/reports/departments` - Department headcount
-- `GET /api/v1/reports/projects` - Project progress
+### Dashboard
+- `GET /api/dashboard/summary` - Get dashboard summary (aggregated data from both databases)
 
-### Audit Trail
-- `GET /api/v1/audit` - System-wide audit log
-- `GET /api/v1/audit/{entityType}/{entityId}` - Entity-specific audit
+### Health Check
+- `GET /health` - API health status
 
-Full API documentation available at: http://localhost:5000 (Swagger UI)
+**Full API documentation available at:** http://localhost:5000 (Scalar UI - auto-opens in browser)
 
 ## 🧪 Development
 
@@ -369,9 +385,14 @@ This project was built using AI coding assistants. See [AI-WORKFLOW.md](./AI-WOR
 
 ## 📝 Documentation
 
-- [Architecture Plan](./ARCHITECTURE.md) - Detailed system design
-- [AI Workflow](./AI-WORKFLOW.md) - AI-assisted development process
-- [Known Issues](./KNOWN-ISSUES.md) - Current limitations
+- **[Documentation Index](./DOCUMENTATION.md)** - Complete documentation overview
+- **[Setup Guide](./SETUP.md)** - Detailed setup instructions
+- **[AI Workflow](./AI-WORKFLOW.md)** - AI-assisted development process
+- **[Changelog](./CHANGELOG.md)** - Version history and changes
+- **[Frontend Documentation](./frontend/README.md)** - Frontend setup and development
+- **[API Connection Guide](./frontend/API_CONNECTION.md)** - Troubleshooting API connections
+- **[Planning Documents](./AI_Planning/)** - Architecture and implementation plans
+- **[Interaction History](./AI_Interaction_History/)** - AI interaction logs
 
 ## 🤝 Contributing
 
@@ -401,4 +422,4 @@ This project is for educational purposes as part of a distributed systems assign
 
 ---
 
-**Last Updated**: February 7, 2026
+**Last Updated**: February 8, 2026

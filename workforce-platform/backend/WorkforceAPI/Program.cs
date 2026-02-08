@@ -81,6 +81,7 @@ if (app.Environment.IsDevelopment())
     app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 }
 
+// CORS must be before UseAuthorization and MapControllers
 app.UseCors("AllowFrontend");
 
 app.UseAuthorization();
