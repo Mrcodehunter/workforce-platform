@@ -15,19 +15,43 @@ public class TaskRepository : ITaskRepository
 
     public async Task<IEnumerable<TaskItem>> GetAllAsync()
     {
-        return await _context.Tasks.Where(t => !t.IsDeleted).ToListAsync();
+        return await _context.Tasks
+            .Include(t => t.Project)
+            .Include(t => t.AssignedToEmployee)
+            .Where(t => !t.IsDeleted)
+            .ToListAsync();
     }
 
     public async Task<TaskItem?> GetByIdAsync(Guid id)
     {
-        return await _context.Tasks.FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+        return await _context.Tasks
+            .Include(t => t.Project)
+            .Include(t => t.AssignedToEmployee)
+            .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+    }
+
+    public async Task<IEnumerable<TaskItem>> GetByProjectIdAsync(Guid projectId)
+    {
+        return await _context.Tasks
+            .Include(t => t.AssignedToEmployee)
+            .Where(t => t.ProjectId == projectId && !t.IsDeleted)
+            .OrderBy(t => t.Priority)
+            .ThenBy(t => t.DueDate)
+            .ToListAsync();
+    }
+
+    public async Task<IEnumerable<TaskItem>> GetByEmployeeIdAsync(Guid employeeId)
+    {
+        return await _context.Tasks
+            .Include(t => t.Project)
+            .Where(t => t.AssignedToEmployeeId == employeeId && !t.IsDeleted)
+            .OrderBy(t => t.Priority)
+            .ThenBy(t => t.DueDate)
+            .ToListAsync();
     }
 
     public async Task<TaskItem> CreateAsync(TaskItem task)
     {
-        task.Id = Guid.NewGuid();
-        task.CreatedAt = DateTime.UtcNow;
-        task.UpdatedAt = DateTime.UtcNow;
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
         return task;
@@ -35,7 +59,6 @@ public class TaskRepository : ITaskRepository
 
     public async Task<TaskItem> UpdateAsync(TaskItem task)
     {
-        task.UpdatedAt = DateTime.UtcNow;
         _context.Tasks.Update(task);
         await _context.SaveChangesAsync();
         return task;
@@ -43,7 +66,7 @@ public class TaskRepository : ITaskRepository
 
     public async Task DeleteAsync(Guid id)
     {
-        var task = await GetByIdAsync(id);
+        var task = await _context.Tasks.FindAsync(id);
         if (task != null)
         {
             task.IsDeleted = true;
