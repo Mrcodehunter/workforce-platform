@@ -1,3 +1,5 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
 using Scalar.AspNetCore;
@@ -19,9 +21,21 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Handle circular references by ignoring cycles
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.MaxDepth = 32;
+        options.JsonSerializerOptions.WriteIndented = false;
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
 
 // Database Configuration
 // PostgreSQL
@@ -83,6 +97,9 @@ if (app.Environment.IsDevelopment())
 
 // CORS must be before UseAuthorization and MapControllers
 app.UseCors("AllowFrontend");
+
+// Global exception handler
+app.UseMiddleware<WorkforceAPI.Middleware.GlobalExceptionHandlerMiddleware>();
 
 app.UseAuthorization();
 

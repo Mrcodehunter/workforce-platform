@@ -1,5 +1,5 @@
-import { useParams, Link } from 'react-router-dom';
-import { useEmployee } from '../hooks/useEmployees';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useEmployee, useDeleteEmployee } from '../hooks/useEmployees';
 import { useQuery } from '@tanstack/react-query';
 import { leaveRequestsApi } from '../api';
 import { Loading } from '../components/common/Loading';
@@ -12,6 +12,8 @@ import type { LeaveRequest } from '../types';
 
 export function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const deleteEmployee = useDeleteEmployee();
 
   const { data: employee, isLoading, error, refetch } = useEmployee(id!);
   const { data: leaveRequests } = useQuery({
@@ -20,6 +22,20 @@ export function EmployeeDetail() {
     enabled: !!id,
     select: (data) => data.filter((lr: LeaveRequest) => lr.employeeId === id),
   });
+
+  const handleDelete = async () => {
+    if (!id || !window.confirm('Are you sure you want to delete this employee? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await deleteEmployee.mutateAsync(id);
+      navigate('/employees');
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      alert('Failed to delete employee. Please try again.');
+    }
+  };
 
   if (isLoading) return <Loading />;
   if (error) return <Error message="Failed to load employee" onRetry={refetch} />;
@@ -42,13 +58,13 @@ export function EmployeeDetail() {
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => navigate(`/employees/${id}/edit`)}>
             <Edit className="h-4 w-4 mr-2" />
             Edit
           </Button>
-          <Button variant="destructive">
+          <Button variant="destructive" onClick={handleDelete} disabled={deleteEmployee.isPending}>
             <Trash2 className="h-4 w-4 mr-2" />
-            Delete
+            {deleteEmployee.isPending ? 'Deleting...' : 'Delete'}
           </Button>
         </div>
       </div>
