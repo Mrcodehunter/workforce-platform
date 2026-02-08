@@ -1,0 +1,100 @@
+Domain Model
+The platform covers three interconnected business domains. Each domain has a natural fit for a specific database technology based on its data characteristics. How you design the schemas, relationships, and storage strategy is a key part of what we evaluate.
+
+
+#Employees, Departments & Designations — SQL Database
+The core organizational data. Employees belong to departments, hold designations, and are assigned to projects. This data is inherently relational—departments have many employees, employees are assigned to multiple projects, and referential integrity matters.
+
+ -----------------------------------------------------------------------------------------------------------------------
+|	Field		|	Type		|	Required	|	Notes					|
+ -----------------------------------------------------------------------------------------------------------------------
+|	id		|	PK		|	auto		|	Unique identifier			|
+ -----------------------------------------------------------------------------------------------------------------------
+|	firstName	|	string		|	yes		|						|
+ -----------------------------------------------------------------------------------------------------------------------
+|	lastName	|	string		|	yes		|						|
+ -----------------------------------------------------------------------------------------------------------------------
+|	email		|	string		|	yes		|	Unique					|
+ -----------------------------------------------------------------------------------------------------------------------
+|	isActive	|	Boolean		|	yes		|	Employment status			|
+ -----------------------------------------------------------------------------------------------------------------------
+|	departmentId	|	FK		|	yes		|	References Departments table		|
+ -----------------------------------------------------------------------------------------------------------------------
+|	designationId	|	FK		|	yes		|	References Designations table		|
+ -----------------------------------------------------------------------------------------------------------------------
+|	salary		|	decimal		|	yes		|	Monthly salary				|
+ -----------------------------------------------------------------------------------------------------------------------
+|	joiningDate	|	date		|	yes		|	Date of joining				|
+ -----------------------------------------------------------------------------------------------------------------------
+|	phone		|	string		|	no		|	Contact number				|
+ -----------------------------------------------------------------------------------------------------------------------
+|	address		|	string		|	no		|	Street address				|
+ -----------------------------------------------------------------------------------------------------------------------
+|	city		|	string		|	no		|						|
+ -----------------------------------------------------------------------------------------------------------------------
+|	country		|	string		|	no		|						|
+ -----------------------------------------------------------------------------------------------------------------------
+|	skills		|	string[]	|	no		|	Skill tags (store as you see fit)	|
+ -----------------------------------------------------------------------------------------------------------------------
+|	avatarUrl	|	string		|	no		|	Profile picture URL			|
+ -----------------------------------------------------------------------------------------------------------------------
+
+
+*Departments and *Designations should be separate entities. You decide their schema and whether they have additional fields beyond name/id.
+
+
+#Projects & Tasks — SQL Database
+Projects are created and have team members (employees) assigned to them. Each project contains tasks that can be assigned to team members. Tasks move through a status workflow. The many-to-many relationships and status transitions make this a natural fit for relational storage.
+
+ -----------------------------------------------------------------------------------------------------------------------
+|	Field		|	Type		|	Required	|	Notes					|
+ -----------------------------------------------------------------------------------------------------------------------
+|	id		|	PK		|	auto		|	Unique identifier			|
+ -----------------------------------------------------------------------------------------------------------------------
+|	name		|	string		|	yes		|	Project name				|
+ -----------------------------------------------------------------------------------------------------------------------
+|	description	|	string		|	no		|	Project description			|
+ -----------------------------------------------------------------------------------------------------------------------
+|	status		|	enum		|	yes		|	e.g. Active, Completed, On Hold		|
+ -----------------------------------------------------------------------------------------------------------------------
+|	startDate	|	date		|	yes		|						|
+ -----------------------------------------------------------------------------------------------------------------------
+|	endDate		|	date		|	no		|	Nullable for ongoing projects		|
+ -----------------------------------------------------------------------------------------------------------------------
+
+
+Projects have team members (**many-to-many with Employees**). Tasks belong to a project and can be assigned to an employee. Tasks must have at least: title, description, status (a multi-step workflow you define), priority, due date, and the assigned employee. You decide the full schema and how the relationships are modeled.
+
+#Leave / Time-Off Requests — MongoDB
+Employees submit leave requests with date ranges, leave types, and optional notes. Each request goes through an approval workflow. The full history of status changes, approver actions, and comments is embedded within the request document—making it a self-contained record that doesn’t require joins to reconstruct.
+
+ -------------------------------------------------------------------------------------------------------------------------------
+|	Field		|	Type		|	Required	|	Notes						|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	_id		|	ObjectId	|	auto		|							|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	employeeId	|	ref		|	yes		|	References the SQL employee ID			|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	employeeName	|	string		|	yes		|	Denormalized for display			|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	leaveType	|	string		|	yes		|	e.g. Sick, Casual, Annual, Unpaid		|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	startDate	|	date		|	yes		|							|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	endDate		|	date		|	yes		|							|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	status		|	string		|	yes		|	Pending, Approved, Rejected, Cancelled		|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	reason		|	string		|	no		|	Employee’s reason for the request		|
+ -------------------------------------------------------------------------------------------------------------------------------
+|	approvalHistory	|	array		|	auto		|	Embedded: who changed status, when, comments	|
+ -------------------------------------------------------------------------------------------------------------------------------
+
+
+The approval history is an embedded array of status change records within each leave document. You decide what each entry contains. This embedded approach—where the full lifecycle lives inside one document—is why this domain fits MongoDB rather than SQL.
+
+#Operational Data — MongoDB
+In addition to leave requests, MongoDB stores system-generated operational data:
+
+Audit Log — An immutable record of every significant domain event. Each entry captures: event type, affected entity, timestamp, the actor, and a before/after snapshot for mutations. Generated by one of the background workers.
+Summary Reports — Periodically computed aggregate data: headcount per department, project progress, leave statistics, recent activity. Generated by one of the background workers and served to the frontend dashboard.

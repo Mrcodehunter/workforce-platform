@@ -28,6 +28,28 @@ public class WorkforceDbContext : DbContext
             e.HasIndex(x => x.DepartmentId);
             e.HasIndex(x => x.DesignationId);
             e.Property(x => x.Skills).HasColumnType("jsonb");
+            e.Property(x => x.Salary).HasPrecision(18, 2);
+            
+            // Relationships
+            e.HasOne(x => x.Department)
+                .WithMany()
+                .HasForeignKey(x => x.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            e.HasOne(x => x.Designation)
+                .WithMany()
+                .HasForeignKey(x => x.DesignationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            e.HasMany(x => x.ProjectMembers)
+                .WithOne(x => x.Employee)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            e.HasMany(x => x.AssignedTasks)
+                .WithOne(x => x.AssignedToEmployee)
+                .HasForeignKey(x => x.AssignedToEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         // Department configuration
@@ -56,6 +78,18 @@ public class WorkforceDbContext : DbContext
         {
             e.HasKey(x => new { x.ProjectId, x.EmployeeId });
             e.HasIndex(x => x.EmployeeId);
+            e.HasIndex(x => x.ProjectId);
+            
+            // Relationships
+            e.HasOne(x => x.Project)
+                .WithMany(x => x.ProjectMembers)
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            e.HasOne(x => x.Employee)
+                .WithMany(x => x.ProjectMembers)
+                .HasForeignKey(x => x.EmployeeId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         // Task configuration
@@ -64,6 +98,18 @@ public class WorkforceDbContext : DbContext
             e.HasKey(x => x.Id);
             e.HasIndex(x => x.ProjectId);
             e.HasIndex(x => x.AssignedToEmployeeId);
+            e.HasIndex(x => x.Status);
+            
+            // Relationships
+            e.HasOne(x => x.Project)
+                .WithMany(x => x.Tasks)
+                .HasForeignKey(x => x.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            e.HasOne(x => x.AssignedToEmployee)
+                .WithMany(x => x.AssignedTasks)
+                .HasForeignKey(x => x.AssignedToEmployeeId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

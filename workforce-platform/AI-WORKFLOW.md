@@ -94,9 +94,11 @@ AI was heavily used for initial architecture design:
 ### Hand-Written Code
 
 **Frontend**
-- React components: ~30% AI-assisted
-- TypeScript types: ~40% AI-assisted
-- Styling and UI: Primarily hand-written
+- React components: ~50% AI-assisted
+- TypeScript types: ~60% AI-assisted
+- API layer: ~70% AI-generated
+- Styling and UI: ~40% AI-assisted
+- Pages and routing: ~50% AI-assisted
 
 **Configuration**
 - `appsettings.json`: Hand-written
@@ -300,11 +302,12 @@ This provides:
 
 ## 8. Key Metrics
 
-- **Total AI Interactions**: 20+ major interactions
-- **Code Generated**: ~60% of backend codebase
-- **Time Saved**: Estimated 40-50 hours of development time
-- **Issues Resolved**: 15+ build/deployment issues
-- **Files Created with AI**: 40+ files
+- **Total AI Interactions**: 30+ major interactions
+- **Code Generated**: ~65% of backend codebase, ~50% of frontend codebase
+- **Time Saved**: Estimated 60-70 hours of development time
+- **Issues Resolved**: 20+ build/deployment issues
+- **Files Created with AI**: 60+ files
+- **Documentation Generated**: 10+ markdown files
 
 ## 9. Best Practices Learned
 
