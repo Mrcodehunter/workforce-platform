@@ -90,4 +90,65 @@ public class DesignationsController : ControllerBase
             return StatusCode(500, new { message = "An error occurred while creating the designation" });
         }
     }
+
+    /// <summary>
+    /// Update an existing designation
+    /// </summary>
+    /// <param name="id">Designation ID</param>
+    /// <param name="designation">Updated designation data</param>
+    /// <returns>Updated designation</returns>
+    [HttpPut("{id}")]
+    [ProducesResponseType(typeof(Designation), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<Designation>> Update(Guid id, [FromBody] Designation designation)
+    {
+        try
+        {
+            if (id != designation.Id)
+            {
+                return BadRequest(new { message = "ID mismatch" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var updatedDesignation = await _designationService.UpdateAsync(designation);
+            return Ok(updatedDesignation);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Designation {DesignationId} not found", id);
+            return NotFound(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating designation {DesignationId}", id);
+            return StatusCode(500, new { message = "An error occurred while updating the designation" });
+        }
+    }
+
+    /// <summary>
+    /// Delete a designation
+    /// </summary>
+    /// <param name="id">Designation ID</param>
+    /// <returns>No content</returns>
+    [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        try
+        {
+            await _designationService.DeleteAsync(id);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting designation {DesignationId}", id);
+            return StatusCode(500, new { message = "An error occurred while deleting the designation" });
+        }
+    }
 }

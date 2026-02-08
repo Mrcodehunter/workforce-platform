@@ -2,6 +2,7 @@ using System.Text.Json;
 using WorkforceAPI.Models;
 using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Repositories;
+using WorkforceAPI.Helpers;
 using Workforce.Shared.Cache;
 using Workforce.Shared.EventPublisher;
 using Workforce.Shared.Events;
@@ -167,7 +168,7 @@ public class TaskService : ITaskService
         // Capture "after" snapshot and store in Redis BEFORE publishing event
         if (reloaded != null)
         {
-            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            var afterSnapshot = AuditEntitySerializer.SerializeTaskItem(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
         
@@ -189,7 +190,7 @@ public class TaskService : ITaskService
         var eventId = Guid.NewGuid().ToString();
         
         // Capture "before" snapshot and store in Redis BEFORE publishing event
-        var beforeSnapshot = JsonSerializer.Serialize(existingTask, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        var beforeSnapshot = AuditEntitySerializer.SerializeTaskItem(existingTask);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
         
         // Publish event after Redis key is set
@@ -211,7 +212,7 @@ public class TaskService : ITaskService
         var reloaded = await _repository.GetByIdAsync(result.Id);
         if (reloaded != null)
         {
-            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            var afterSnapshot = AuditEntitySerializer.SerializeTaskItem(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
         
@@ -230,7 +231,7 @@ public class TaskService : ITaskService
         var eventId = Guid.NewGuid().ToString();
         
         // Capture "before" snapshot and store in Redis BEFORE publishing event
-        var beforeSnapshot = JsonSerializer.Serialize(task, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        var beforeSnapshot = AuditEntitySerializer.SerializeTaskItem(task);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
 
         task.Status = status;
@@ -242,7 +243,7 @@ public class TaskService : ITaskService
         var reloaded = await _repository.GetByIdAsync(result.Id);
         if (reloaded != null)
         {
-            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            var afterSnapshot = AuditEntitySerializer.SerializeTaskItem(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
         
@@ -262,7 +263,7 @@ public class TaskService : ITaskService
             var eventId = Guid.NewGuid().ToString();
             
             // Store "before" snapshot in Redis BEFORE publishing event
-            var beforeSnapshot = JsonSerializer.Serialize(existingTask, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            var beforeSnapshot = AuditEntitySerializer.SerializeTaskItem(existingTask);
             await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
             
             // Publish event after Redis key is set

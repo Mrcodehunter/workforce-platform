@@ -2,6 +2,7 @@ using System.Text.Json;
 using WorkforceAPI.Models;
 using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Repositories;
+using WorkforceAPI.Helpers;
 using Workforce.Shared.Cache;
 using Workforce.Shared.EventPublisher;
 using Workforce.Shared.Events;
@@ -118,11 +119,7 @@ public class ProjectService : IProjectService
         // Capture "after" snapshot and store in Redis BEFORE publishing event
         if (reloaded != null)
         {
-            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions 
-            { 
-                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
-                WriteIndented = false
-            });
+            var afterSnapshot = AuditEntitySerializer.SerializeProject(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
         
@@ -144,7 +141,7 @@ public class ProjectService : IProjectService
         var eventId = Guid.NewGuid().ToString();
         
         // Capture "before" snapshot and store in Redis BEFORE publishing event
-        var beforeSnapshot = JsonSerializer.Serialize(existingProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        var beforeSnapshot = AuditEntitySerializer.SerializeProject(existingProject);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
         
         // Publish event after Redis key is set
@@ -165,11 +162,7 @@ public class ProjectService : IProjectService
         var reloaded = await _repository.ReloadWithNavigationPropertiesAsync(result.Id);
         if (reloaded != null)
         {
-            var afterSnapshot = JsonSerializer.Serialize(reloaded, new JsonSerializerOptions 
-            { 
-                ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles,
-                WriteIndented = false
-            });
+            var afterSnapshot = AuditEntitySerializer.SerializeProject(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
         
@@ -186,7 +179,7 @@ public class ProjectService : IProjectService
             var eventId = Guid.NewGuid().ToString();
             
             // Store "before" snapshot in Redis BEFORE publishing event
-            var beforeSnapshot = JsonSerializer.Serialize(existingProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+            var beforeSnapshot = AuditEntitySerializer.SerializeProject(existingProject);
             await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
             
             // Publish event after Redis key is set
@@ -223,7 +216,7 @@ public class ProjectService : IProjectService
         var eventId = Guid.NewGuid().ToString();
         
         // Capture "before" snapshot (project before member addition)
-        var beforeSnapshot = JsonSerializer.Serialize(project, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        var beforeSnapshot = AuditEntitySerializer.SerializeProject(project);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
 
         // Create project member
@@ -318,7 +311,7 @@ public class ProjectService : IProjectService
         var eventId = Guid.NewGuid().ToString();
         
         // Capture "before" snapshot (project before member removal)
-        var beforeSnapshot = JsonSerializer.Serialize(project, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        var beforeSnapshot = AuditEntitySerializer.SerializeProject(project);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
 
         // Remove member
@@ -332,7 +325,7 @@ public class ProjectService : IProjectService
         }
         
         // Capture "after" snapshot and store in Redis BEFORE publishing event
-        var afterSnapshot = JsonSerializer.Serialize(updatedProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        var afterSnapshot = AuditEntitySerializer.SerializeProject(updatedProject);
         await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         
         // Publish event after Redis keys are set
