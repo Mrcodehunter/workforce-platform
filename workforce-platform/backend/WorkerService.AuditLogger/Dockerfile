@@ -2,7 +2,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-# Copy csproj and restore dependencies
+# Copy csproj files and restore dependencies (including shared project)
+COPY ["Workforce.Shared/Workforce.Shared.csproj", "Workforce.Shared/"]
 COPY ["WorkerService.AuditLogger/WorkerService.AuditLogger.csproj", "WorkerService.AuditLogger/"]
 RUN dotnet restore "WorkerService.AuditLogger/WorkerService.AuditLogger.csproj"
 

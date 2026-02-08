@@ -1,14 +1,14 @@
 using WorkerService.AuditLogger.Services;
-using Serilog;
+using Microsoft.Extensions.Logging;
 
 namespace WorkerService.AuditLogger;
 
 public class AuditWorker : BackgroundService
 {
     private readonly IRabbitMqConsumer _rabbitMqConsumer;
-    private readonly Serilog.ILogger _logger;
+    private readonly ILogger<AuditWorker> _logger;
 
-    public AuditWorker(IRabbitMqConsumer rabbitMqConsumer, Serilog.ILogger logger)
+    public AuditWorker(IRabbitMqConsumer rabbitMqConsumer, ILogger<AuditWorker> logger)
     {
         _rabbitMqConsumer = rabbitMqConsumer;
         _logger = logger;
@@ -16,7 +16,7 @@ public class AuditWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.Information("Audit Worker starting...");
+        _logger.LogInformation("Audit Worker starting...");
         
         try
         {
@@ -30,13 +30,13 @@ public class AuditWorker : BackgroundService
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error in Audit Worker");
+            _logger.LogError(ex, "Error in Audit Worker");
         }
     }
 
     public override async Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.Information("Audit Worker stopping...");
+        _logger.LogInformation("Audit Worker stopping...");
         await _rabbitMqConsumer.StopAsync(cancellationToken);
         await base.StopAsync(cancellationToken);
     }

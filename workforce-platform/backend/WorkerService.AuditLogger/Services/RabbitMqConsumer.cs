@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Serilog;
+using Microsoft.Extensions.Logging;
 using System.Text;
 using System.Text.Json;
 
@@ -10,12 +10,12 @@ public class RabbitMqConsumer : IRabbitMqConsumer, IDisposable
 {
     private readonly IConfiguration _configuration;
     private readonly IAuditLogService _auditLogService;
-    private readonly Serilog.ILogger _logger;
+    private readonly ILogger<RabbitMqConsumer> _logger;
     private IConnection? _connection;
     private IModel? _channel;
     private bool _disposed = false;
 
-    public RabbitMqConsumer(IConfiguration configuration, IAuditLogService auditLogService, Serilog.ILogger logger)
+    public RabbitMqConsumer(IConfiguration configuration, IAuditLogService auditLogService, ILogger<RabbitMqConsumer> logger)
     {
         _configuration = configuration;
         _auditLogService = auditLogService;
@@ -68,34 +68,37 @@ public class RabbitMqConsumer : IRabbitMqConsumer, IDisposable
                     var message = Encoding.UTF8.GetString(body);
                     var routingKey = ea.RoutingKey;
 
-                    _logger.Information("Received event: {RoutingKey}", routingKey);
+                    _logger.LogInformation("Received event: {RoutingKey}", routingKey);
 
-                    // Parse event data
-                    var eventData = JsonSerializer.Deserialize<Dictionary<string, object>>(message);
-                    var eventId = eventData?.ContainsKey("EventId") == true 
-                        ? eventData["EventId"]?.ToString() 
+                    // Parse event payload (structure: { EventId, EventType, Timestamp, Data })
+                    var eventPayload = JsonSerializer.Deserialize<Dictionary<string, object>>(message);
+                    var eventId = eventPayload?.ContainsKey("EventId") == true 
+                        ? eventPayload["EventId"]?.ToString() 
                         : Guid.NewGuid().ToString();
 
-                    // Log to audit service
-                    await _auditLogService.LogEventAsync(eventId ?? Guid.NewGuid().ToString(), routingKey, eventData ?? new Dictionary<string, object>());
+                    // Pass the entire payload to the audit service so it can extract entity info
+                    await _auditLogService.LogEventAsync(
+                        eventId ?? Guid.NewGuid().ToString(), 
+                        routingKey, 
+                        eventPayload ?? new Dictionary<string, object>());
 
                     _channel?.BasicAck(ea.DeliveryTag, false);
                 }
                 catch (Exception ex)
                 {
-                    _logger.Error(ex, "Error processing message");
+                    _logger.LogError(ex, "Error processing message");
                     _channel?.BasicNack(ea.DeliveryTag, false, true);
                 }
             };
 
             _channel.BasicConsume(queueName, autoAck: false, consumer);
-            _logger.Information("RabbitMQ consumer started for queue: {QueueName}", queueName);
+            _logger.LogInformation("RabbitMQ consumer started for queue: {QueueName}", queueName);
 
             return Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "Error starting RabbitMQ consumer");
+            _logger.LogError(ex, "Error starting RabbitMQ consumer");
             throw;
         }
     }
@@ -104,7 +107,7 @@ public class RabbitMqConsumer : IRabbitMqConsumer, IDisposable
     {
         _channel?.Close();
         _connection?.Close();
-        _logger.Information("RabbitMQ consumer stopped");
+        _logger.LogInformation("RabbitMQ consumer stopped");
         return Task.CompletedTask;
     }
 
