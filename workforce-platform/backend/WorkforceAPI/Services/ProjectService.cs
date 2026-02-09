@@ -9,14 +9,6 @@ using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
-/// <summary>
-/// Service implementation for project-related business operations
-/// </summary>
-/// <remarks>
-/// This service class implements business logic for project management including
-/// CRUD operations and project member management. It handles audit trail workflows
-/// and event publishing for all project-related operations.
-/// </remarks>
 public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _repository;
@@ -24,9 +16,6 @@ public class ProjectService : IProjectService
     private readonly IRabbitMqPublisher _eventPublisher;
     private readonly IRedisCache _redisCache;
 
-    /// <summary>
-    /// Initializes a new instance of ProjectService
-    /// </summary>
     public ProjectService(
         IProjectRepository repository, 
         IEmployeeRepository employeeRepository,

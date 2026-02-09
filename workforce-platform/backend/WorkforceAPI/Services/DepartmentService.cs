@@ -7,21 +7,12 @@ using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
-/// <summary>
-/// Service implementation for department-related business operations
-/// </summary>
-/// <remarks>
-/// Handles department CRUD operations with audit trail support.
-/// </remarks>
 public class DepartmentService : IDepartmentService
 {
     private readonly IDepartmentRepository _repository;
     private readonly IRabbitMqPublisher _eventPublisher;
     private readonly IRedisCache _redisCache;
 
-    /// <summary>
-    /// Initializes a new instance of DepartmentService
-    /// </summary>
     public DepartmentService(IDepartmentRepository repository, IRabbitMqPublisher eventPublisher, IRedisCache redisCache)
     {
         _repository = repository;

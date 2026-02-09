@@ -4,9 +4,6 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
-/// <summary>
-/// API controller for leave request management operations
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class LeaveRequestsController : ControllerBase
@@ -14,9 +11,6 @@ public class LeaveRequestsController : ControllerBase
     private readonly ILeaveRequestService _leaveRequestService;
     private readonly ILogger<LeaveRequestsController> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of LeaveRequestsController
-    /// </summary>
     public LeaveRequestsController(ILeaveRequestService leaveRequestService, ILogger<LeaveRequestsController> logger)
     {
         _leaveRequestService = leaveRequestService;

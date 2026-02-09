@@ -8,22 +8,12 @@ using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
-/// <summary>
-/// Service implementation for leave request-related business operations
-/// </summary>
-/// <remarks>
-/// Handles leave request CRUD operations and approval workflow with audit trail support.
-/// Leave requests are stored in MongoDB, so this service works with MongoDB repositories.
-/// </remarks>
 public class LeaveRequestService : ILeaveRequestService
 {
     private readonly ILeaveRequestRepository _repository;
     private readonly IRabbitMqPublisher _eventPublisher;
     private readonly IRedisCache _redisCache;
 
-    /// <summary>
-    /// Initializes a new instance of LeaveRequestService
-    /// </summary>
     public LeaveRequestService(ILeaveRequestRepository repository, IRabbitMqPublisher eventPublisher, IRedisCache redisCache)
     {
         _repository = repository;

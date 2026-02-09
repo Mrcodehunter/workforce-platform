@@ -4,9 +4,6 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
-/// <summary>
-/// API controller for audit log query operations
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class AuditLogsController : ControllerBase
@@ -14,9 +11,6 @@ public class AuditLogsController : ControllerBase
     private readonly IAuditLogService _auditLogService;
     private readonly ILogger<AuditLogsController> _logger;
 
-    /// <summary>
-    /// Initializes a new instance of AuditLogsController
-    /// </summary>
     public AuditLogsController(IAuditLogService auditLogService, ILogger<AuditLogsController> logger)
     {
         _auditLogService = auditLogService;

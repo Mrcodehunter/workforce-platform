@@ -3,17 +3,11 @@ using WorkforceAPI.Models.MongoDB;
 
 namespace WorkforceAPI.Repositories;
 
-/// <summary>
-/// Repository implementation for leave request data access operations (MongoDB)
-/// </summary>
 public class LeaveRequestRepository : ILeaveRequestRepository
 {
     private readonly IMongoDatabase _mongoDatabase;
     private IMongoCollection<LeaveRequest>? _collection;
 
-    /// <summary>
-    /// Initializes a new instance of LeaveRequestRepository
-    /// </summary>
     public LeaveRequestRepository(IMongoDatabase mongoDatabase)
     {
         _mongoDatabase = mongoDatabase;

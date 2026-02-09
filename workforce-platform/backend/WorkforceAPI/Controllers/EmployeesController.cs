@@ -7,9 +7,6 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
-/// <summary>
-/// API controller for employee management operations
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class EmployeesController : ControllerBase
@@ -18,9 +15,6 @@ public class EmployeesController : ControllerBase
     private readonly ILogger<EmployeesController> _logger;
     private readonly IWebHostEnvironment _environment;
 
-    /// <summary>
-    /// Initializes a new instance of EmployeesController
-    /// </summary>
     public EmployeesController(
         IEmployeeService employeeService, 
         ILogger<EmployeesController> logger,
