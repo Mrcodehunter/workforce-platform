@@ -1,39 +1,50 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useEmployees } from '../hooks/useEmployees';
+import { useEmployeesPaged } from '../hooks/useEmployees';
 import { useQuery } from '@tanstack/react-query';
 import { departmentsApi } from '../api';
+import { type PagedResult } from '../api/endpoints/employees.api';
 import { Loading } from '../components/common/Loading';
 import { Error } from '../components/common/Error';
 import { EmptyState } from '../components/common/EmptyState';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/common/Card';
+import { Pagination } from '../components/common/Pagination';
 import { Users, Plus, Search } from 'lucide-react';
 import type { Employee } from '../types';
 
 export function EmployeeList() {
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<keyof Employee>('firstName');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
 
-  const { data: employees, isLoading, error, refetch } = useEmployees();
+  const { data: pagedResult, isLoading, error, refetch } = useEmployeesPaged(page, pageSize);
+  const typedPagedResult = pagedResult as PagedResult<Employee> | undefined;
   const { data: departments } = useQuery({
     queryKey: ['departments'],
     queryFn: departmentsApi.getAll,
   });
 
+  // Reset to page 1 when filters change
+  const handleFilterChange = () => {
+    setPage(1);
+  };
+
   if (isLoading) return <Loading />;
   if (error) return <Error message="Failed to load employees" onRetry={refetch} />;
 
-  // Filtering and sorting
-  let filteredEmployees = employees || [];
+  // Filtering and sorting (client-side on paginated results)
+  const employees = typedPagedResult?.data ?? [];
+  let filteredEmployees: Employee[] = employees;
 
   if (searchTerm) {
     filteredEmployees = filteredEmployees.filter(
-      (emp) =>
+      (emp: Employee) =>
         emp.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.email.toLowerCase().includes(searchTerm.toLowerCase())
@@ -41,12 +52,12 @@ export function EmployeeList() {
   }
 
   if (departmentFilter !== 'all') {
-    filteredEmployees = filteredEmployees.filter((emp) => emp.departmentId === departmentFilter);
+    filteredEmployees = filteredEmployees.filter((emp: Employee) => emp.departmentId === departmentFilter);
   }
 
   if (statusFilter !== 'all') {
     filteredEmployees = filteredEmployees.filter(
-      (emp) => emp.isActive === (statusFilter === 'active')
+      (emp: Employee) => emp.isActive === (statusFilter === 'active')
     );
   }
 
@@ -67,6 +78,12 @@ export function EmployeeList() {
       setSortBy(column);
       setSortOrder('asc');
     }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -99,7 +116,10 @@ export function EmployeeList() {
             </div>
             <select
               value={departmentFilter}
-              onChange={(e) => setDepartmentFilter(e.target.value)}
+              onChange={(e) => {
+                setDepartmentFilter(e.target.value);
+                handleFilterChange();
+              }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="all">All Departments</option>
@@ -111,7 +131,10 @@ export function EmployeeList() {
             </select>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                handleFilterChange();
+              }}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="all">All Status</option>
@@ -132,7 +155,9 @@ export function EmployeeList() {
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Employee List ({filteredEmployees.length})</CardTitle>
+            <CardTitle>
+              Employee List ({typedPagedResult ? typedPagedResult.totalCount : 0} total, showing {filteredEmployees.length} on this page)
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -157,7 +182,7 @@ export function EmployeeList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredEmployees.map((employee) => (
+                  {filteredEmployees.map((employee: Employee) => (
                     <tr key={employee.id} className="border-b hover:bg-accent/50">
                       <td className="p-2">
                         {employee.firstName} {employee.lastName}
@@ -189,6 +214,17 @@ export function EmployeeList() {
                 </tbody>
               </table>
             </div>
+            {typedPagedResult && typedPagedResult.totalPages > 0 ? (
+              <Pagination
+                page={typedPagedResult.page}
+                pageSize={typedPagedResult.pageSize}
+                totalCount={typedPagedResult.totalCount}
+                totalPages={typedPagedResult.totalPages}
+                hasPreviousPage={typedPagedResult.hasPreviousPage}
+                hasNextPage={typedPagedResult.hasNextPage}
+                onPageChange={handlePageChange}
+              />
+            ) : null}
           </CardContent>
         </Card>
       )}

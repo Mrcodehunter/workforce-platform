@@ -27,10 +27,10 @@ public class EmployeesController : ControllerBase
     }
 
     /// <summary>
-    /// Get all employees
+    /// Get all employees (non-paginated - for backward compatibility)
     /// </summary>
     /// <returns>List of employees</returns>
-    [HttpGet]
+    [HttpGet("all")]
     [ProducesResponseType(typeof(IEnumerable<EmployeeListDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<EmployeeListDto>>> GetAll()
     {
@@ -42,6 +42,30 @@ public class EmployeesController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error retrieving employees");
+            return StatusCode(500, new { message = "An error occurred while retrieving employees" });
+        }
+    }
+
+    /// <summary>
+    /// Get paginated employees
+    /// </summary>
+    /// <param name="page">Page number (default: 1)</param>
+    /// <param name="pageSize">Number of items per page (default: 10, max: 100)</param>
+    /// <returns>Paginated list of employees</returns>
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<EmployeeListDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<EmployeeListDto>>> GetPaged(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        try
+        {
+            var result = await _employeeService.GetPagedAsync(page, pageSize);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving paginated employees");
             return StatusCode(500, new { message = "An error occurred while retrieving employees" });
         }
     }

@@ -22,6 +22,25 @@ public class EmployeeRepository : IEmployeeRepository
             .ToListAsync();
     }
 
+    public async Task<(IEnumerable<Employee> Data, int TotalCount)> GetPagedAsync(int page, int pageSize)
+    {
+        var query = _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Designation)
+            .Where(e => !e.IsDeleted);
+
+        var totalCount = await query.CountAsync();
+
+        var data = await query
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (data, totalCount);
+    }
+
     public async Task<Employee?> GetByIdAsync(Guid id)
     {
         return await _context.Employees

@@ -1,11 +1,19 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { employeesApi } from '../api';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { employeesApi, type PagedResult } from '../api';
 import type { Employee } from '../types';
 
 export const useEmployees = () => {
   return useQuery({
     queryKey: ['employees'],
     queryFn: employeesApi.getAll,
+  });
+};
+
+export const useEmployeesPaged = (page: number = 1, pageSize: number = 10) => {
+  return useQuery<PagedResult<Employee>>({
+    queryKey: ['employees', 'paged', page, pageSize],
+    queryFn: () => employeesApi.getPaged(page, pageSize),
+    placeholderData: keepPreviousData, // Keep previous data while loading new page (React Query v5)
   });
 };
 
