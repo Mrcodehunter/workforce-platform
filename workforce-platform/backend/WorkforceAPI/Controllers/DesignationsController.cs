@@ -6,6 +6,7 @@ namespace WorkforceAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class DesignationsController : ControllerBase
 {
     private readonly IDesignationService _designationService;
@@ -22,6 +23,7 @@ public class DesignationsController : ControllerBase
     /// </summary>
     /// <returns>List of designations</returns>
     [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<Designation>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Designation>>> GetAll()
     {
         try
@@ -42,14 +44,24 @@ public class DesignationsController : ControllerBase
     /// <param name="id">Designation ID</param>
     /// <returns>Designation details</returns>
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(Designation), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Designation>> GetById(Guid id)
     {
-        var designation = await _designationService.GetByIdAsync(id);
-        if (designation == null)
+        try
         {
-            return NotFound(new { message = $"Designation with ID {id} not found" });
+            var designation = await _designationService.GetByIdAsync(id);
+            if (designation == null)
+            {
+                return NotFound(new { message = $"Designation with ID {id} not found" });
+            }
+            return Ok(designation);
         }
-        return Ok(designation);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving designation {DesignationId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving the designation" });
+        }
     }
 
     /// <summary>
@@ -58,6 +70,8 @@ public class DesignationsController : ControllerBase
     /// <param name="designation">Designation data</param>
     /// <returns>Created designation</returns>
     [HttpPost]
+    [ProducesResponseType(typeof(Designation), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Designation>> Create([FromBody] Designation designation)
     {
         try
@@ -84,20 +98,36 @@ public class DesignationsController : ControllerBase
     /// <param name="designation">Updated designation data</param>
     /// <returns>Updated designation</returns>
     [HttpPut("{id}")]
+    [ProducesResponseType(typeof(Designation), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Designation>> Update(Guid id, [FromBody] Designation designation)
     {
-        if (id != designation.Id)
+        try
         {
-            return BadRequest(new { message = "ID mismatch" });
-        }
+            if (id != designation.Id)
+            {
+                return BadRequest(new { message = "ID mismatch" });
+            }
 
-        if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var updatedDesignation = await _designationService.UpdateAsync(designation);
+            return Ok(updatedDesignation);
+        }
+        catch (InvalidOperationException ex)
         {
-            return BadRequest(ModelState);
+            _logger.LogWarning(ex, "Designation {DesignationId} not found", id);
+            return NotFound(new { message = ex.Message });
         }
-
-        var updatedDesignation = await _designationService.UpdateAsync(designation);
-        return Ok(updatedDesignation);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating designation {DesignationId}", id);
+            return StatusCode(500, new { message = "An error occurred while updating the designation" });
+        }
     }
 
     /// <summary>
@@ -106,6 +136,8 @@ public class DesignationsController : ControllerBase
     /// <param name="id">Designation ID</param>
     /// <returns>No content</returns>
     [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
     {
         try

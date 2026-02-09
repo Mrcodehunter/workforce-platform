@@ -9,6 +9,7 @@ namespace WorkforceAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _projectService;
@@ -33,6 +34,7 @@ public class ProjectsController : ControllerBase
     /// </summary>
     /// <returns>List of projects</returns>
     [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<ProjectListDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<ProjectListDto>>> GetAll()
     {
         try
@@ -53,14 +55,33 @@ public class ProjectsController : ControllerBase
     /// <param name="id">Project ID</param>
     /// <returns>Project details</returns>
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProjectDetailDto>> GetById(Guid id)
     {
-        var project = await _projectService.GetByIdAsync(id);
-        if (project == null)
+        try
         {
-            return NotFound(new { message = $"Project with ID {id} not found" });
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
+
+            var project = await _projectService.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound(new { message = $"Project with ID {id} not found" });
+            }
+
+            // Log for debugging
+            _logger.LogInformation("Project {ProjectId} has {MemberCount} members", id, project.ProjectMembers?.Count ?? 0);
+
+            return Ok(project);
         }
-        return Ok(project);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving the project" });
+        }
     }
 
     /// <summary>
@@ -69,6 +90,8 @@ public class ProjectsController : ControllerBase
     /// <param name="project">Project data</param>
     /// <returns>Created project</returns>
     [HttpPost]
+    [ProducesResponseType(typeof(Project), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Project>> Create([FromBody] Project project)
     {
         try
@@ -95,20 +118,37 @@ public class ProjectsController : ControllerBase
     /// <param name="project">Updated project data</param>
     /// <returns>Updated project</returns>
     [HttpPut("{id}")]
+    [ProducesResponseType(typeof(Project), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Project>> Update(Guid id, [FromBody] Project project)
     {
-        if (id != project.Id)
+        try
         {
-            return BadRequest(new { message = "ID in URL does not match ID in body" });
-        }
+            if (id != project.Id)
+            {
+                return BadRequest(new { message = "ID in URL does not match ID in body" });
+            }
 
-        if (!ModelState.IsValid)
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var existingProject = await _projectService.GetByIdAsync(id);
+            if (existingProject == null)
+            {
+                return NotFound(new { message = $"Project with ID {id} not found" });
+            }
+
+            var updatedProject = await _projectService.UpdateAsync(project);
+            return Ok(updatedProject);
+        }
+        catch (Exception ex)
         {
-            return BadRequest(ModelState);
+            _logger.LogError(ex, "Error updating project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while updating the project" });
         }
-
-        var updatedProject = await _projectService.UpdateAsync(project);
-        return Ok(updatedProject);
     }
 
     /// <summary>
@@ -117,10 +157,41 @@ public class ProjectsController : ControllerBase
     /// <param name="id">Project ID</param>
     /// <returns>No content</returns>
     [HttpDelete("{id}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        await _projectService.DeleteAsync(id);
-        return NoContent();
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
+
+            var project = await _projectService.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound(new { message = $"Project with ID {id} not found" });
+            }
+
+            await _projectService.DeleteAsync(id);
+            return NoContent();
+        }
+        catch (DbUpdateException ex)
+        {
+            _logger.LogError(ex, "Database error deleting project {ProjectId}", id);
+            return StatusCode(500, new { message = "A database error occurred while deleting the project" });
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation deleting project {ProjectId}", id);
+            return StatusCode(500, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while deleting the project" });
+        }
     }
 
     /// <summary>
@@ -129,10 +200,31 @@ public class ProjectsController : ControllerBase
     /// <param name="id">Project ID</param>
     /// <returns>List of tasks</returns>
     [HttpGet("{id}/tasks")]
+    [ProducesResponseType(typeof(IEnumerable<TaskListDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<IEnumerable<TaskListDto>>> GetProjectTasks(Guid id)
     {
-        var tasks = await _taskService.GetTasksByProjectIdAsync(id);
-        return Ok(tasks);
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
+
+            var project = await _projectService.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound(new { message = $"Project with ID {id} not found" });
+            }
+
+            var tasks = await _taskService.GetTasksByProjectIdAsync(id);
+            return Ok(tasks);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving tasks for project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while retrieving project tasks" });
+        }
     }
 
     /// <summary>
@@ -142,24 +234,56 @@ public class ProjectsController : ControllerBase
     /// <param name="task">Task data</param>
     /// <returns>Created task</returns>
     [HttpPost("{id}/tasks")]
+    [ProducesResponseType(typeof(TaskItem), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskItem>> CreateProjectTask(Guid id, [FromBody] TaskItem task)
     {
-        if (id != task.ProjectId)
+        try
         {
-            return BadRequest(new { message = "Project ID in URL does not match ProjectId in task" });
-        }
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
 
-        if (!ModelState.IsValid)
+            if (id != task.ProjectId)
+            {
+                return BadRequest(new { message = "Project ID in URL does not match ProjectId in task" });
+            }
+
+            var project = await _projectService.GetByIdAsync(id);
+            if (project == null)
+            {
+                return NotFound(new { message = $"Project with ID {id} not found" });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var createdTask = await _taskService.CreateAsync(task);
+            return CreatedAtAction(
+                nameof(TasksController.GetById),
+                "Tasks",
+                new { id = createdTask.Id },
+                createdTask);
+        }
+        catch (DbUpdateException ex)
         {
-            return BadRequest(ModelState);
+            _logger.LogError(ex, "Database error creating task for project {ProjectId}", id);
+            return StatusCode(500, new { message = "A database error occurred while creating the task" });
         }
-
-        var createdTask = await _taskService.CreateAsync(task);
-        return CreatedAtAction(
-            nameof(TasksController.GetById),
-            "Tasks",
-            new { id = createdTask.Id },
-            createdTask);
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogError(ex, "Invalid operation creating task for project {ProjectId}", id);
+            return StatusCode(500, new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating task for project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while creating the task" });
+        }
     }
 
     /// <summary>
@@ -169,15 +293,36 @@ public class ProjectsController : ControllerBase
     /// <param name="request">Member assignment request</param>
     /// <returns>Updated project details</returns>
     [HttpPost("{id}/members")]
+    [ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProjectDetailDto>> AddMember(Guid id, [FromBody] AddProjectMemberRequestDto request)
     {
-        if (!ModelState.IsValid)
+        try
         {
-            return BadRequest(ModelState);
-        }
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
 
-        var project = await _projectService.AddMemberAsync(id, request.EmployeeId, request.Role);
-        return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var project = await _projectService.AddMemberAsync(id, request.EmployeeId, request.Role);
+            return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation adding member to project {ProjectId}", id);
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding member to project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while adding the member" });
+        }
     }
 
     /// <summary>
@@ -187,9 +332,42 @@ public class ProjectsController : ControllerBase
     /// <param name="employeeId">Employee ID</param>
     /// <returns>Updated project details</returns>
     [HttpDelete("{id}/members/{employeeId}")]
+    [ProducesResponseType(typeof(ProjectDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<ProjectDetailDto>> RemoveMember(Guid id, Guid employeeId)
     {
-        var project = await _projectService.RemoveMemberAsync(id, employeeId);
-        return Ok(project);
+        try
+        {
+            if (id == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid project ID" });
+            }
+
+            if (employeeId == Guid.Empty)
+            {
+                return BadRequest(new { message = "Invalid employee ID" });
+            }
+
+            var project = await _projectService.RemoveMemberAsync(id, employeeId);
+            return Ok(project);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _logger.LogWarning(ex, "Invalid operation removing member from project {ProjectId}", id);
+            
+            // Check if it's a "not found" type error
+            if (ex.Message.Contains("not found") || ex.Message.Contains("not a member"))
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing member from project {ProjectId}", id);
+            return StatusCode(500, new { message = "An error occurred while removing the member" });
+        }
     }
 }
