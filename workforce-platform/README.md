@@ -38,7 +38,7 @@ That's it! Docker will handle all other dependencies.
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/workforce-platform.git
+   git clone https://github.com/Mrcodehunter/workforce-platform.git
    cd workforce-platform
    ```
 
@@ -52,7 +52,7 @@ That's it! Docker will handle all other dependencies.
 4. **Access the application**
    - **Frontend**: http://localhost:3000
    - **API**: http://localhost:5000
-   - **API Documentation (Scalar)**: http://localhost:5000 (auto-opens in browser)
+   - **API Documentation (Scalar)**: http://localhost:5000/scalar/v1
    - **RabbitMQ Management**: http://localhost:15672 (guest/guest)
 
 ### First Time Setup
