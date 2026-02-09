@@ -1,0 +1,9 @@
+Special Instructions:
+1. Keep frontend and backend in separate directories within the same monorepo.
+2. Use functional React components with hooks.
+3. Handle errors gracefully on both frontend and backend.
+4. Use structured logging in all backend services.
+5. Document every third-party library and your reason for choosing it.
+6. If something is incomplete, document what you would do given more time in a KNOWN-ISSUES.md or the README.
+7. Write clean, readable code. We read every file.
+8. You can skip or choose to submit partial implementation if you get stuck on something. We will evaluate your effort accordingly. We encourage you learn, adapt and try. 

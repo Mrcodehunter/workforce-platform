@@ -4,8 +4,8 @@ namespace WorkforceAPI.Services;
 
 public interface ILeaveRequestService
 {
-    Task<IEnumerable<LeaveRequest>> GetAllAsync();
-    Task<LeaveRequest?> GetByIdAsync(string id);
+    Task<IEnumerable<LeaveRequest>> GetAllAsync(string? status = null, string? leaveType = null, Guid? employeeId = null);
+    Task<LeaveRequest> GetByIdAsync(string id);
     Task<IEnumerable<LeaveRequest>> GetByEmployeeIdAsync(Guid employeeId);
     Task<IEnumerable<LeaveRequest>> GetByStatusAsync(string status);
     Task<IEnumerable<LeaveRequest>> GetByLeaveTypeAsync(string leaveType);

@@ -6,7 +6,6 @@ namespace WorkforceAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
 public class DepartmentsController : ControllerBase
 {
     private readonly IDepartmentService _departmentService;
@@ -23,7 +22,6 @@ public class DepartmentsController : ControllerBase
     /// </summary>
     /// <returns>List of departments</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(IEnumerable<Department>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<Department>>> GetAll()
     {
         try
@@ -44,24 +42,14 @@ public class DepartmentsController : ControllerBase
     /// <param name="id">Department ID</param>
     /// <returns>Department details</returns>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Department), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Department>> GetById(Guid id)
     {
-        try
+        var department = await _departmentService.GetByIdAsync(id);
+        if (department == null)
         {
-            var department = await _departmentService.GetByIdAsync(id);
-            if (department == null)
-            {
-                return NotFound(new { message = $"Department with ID {id} not found" });
-            }
-            return Ok(department);
+            return NotFound(new { message = $"Department with ID {id} not found" });
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving department {DepartmentId}", id);
-            return StatusCode(500, new { message = "An error occurred while retrieving the department" });
-        }
+        return Ok(department);
     }
 
     /// <summary>
@@ -70,8 +58,6 @@ public class DepartmentsController : ControllerBase
     /// <param name="department">Department data</param>
     /// <returns>Created department</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(Department), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Department>> Create([FromBody] Department department)
     {
         try
@@ -98,37 +84,20 @@ public class DepartmentsController : ControllerBase
     /// <param name="department">Updated department data</param>
     /// <returns>Updated department</returns>
     [HttpPut("{id}")]
-    [ProducesResponseType(typeof(Department), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Department>> Update(Guid id, [FromBody] Department department)
     {
-        try
+        if (id != department.Id)
         {
-            if (id != department.Id)
-            {
-                return BadRequest(new { message = "ID in URL does not match ID in body" });
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var existingDepartment = await _departmentService.GetByIdAsync(id);
-            if (existingDepartment == null)
-            {
-                return NotFound(new { message = $"Department with ID {id} not found" });
-            }
-
-            var updatedDepartment = await _departmentService.UpdateAsync(department);
-            return Ok(updatedDepartment);
+            return BadRequest(new { message = "ID in URL does not match ID in body" });
         }
-        catch (Exception ex)
+
+        if (!ModelState.IsValid)
         {
-            _logger.LogError(ex, "Error updating department {DepartmentId}", id);
-            return StatusCode(500, new { message = "An error occurred while updating the department" });
+            return BadRequest(ModelState);
         }
+
+        var updatedDepartment = await _departmentService.UpdateAsync(department);
+        return Ok(updatedDepartment);
     }
 
     /// <summary>
@@ -137,25 +106,9 @@ public class DepartmentsController : ControllerBase
     /// <param name="id">Department ID</param>
     /// <returns>No content</returns>
     [HttpDelete("{id}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id)
     {
-        try
-        {
-            var department = await _departmentService.GetByIdAsync(id);
-            if (department == null)
-            {
-                return NotFound(new { message = $"Department with ID {id} not found" });
-            }
-
-            await _departmentService.DeleteAsync(id);
-            return NoContent();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error deleting department {DepartmentId}", id);
-            return StatusCode(500, new { message = "An error occurred while deleting the department" });
-        }
+        await _departmentService.DeleteAsync(id);
+        return NoContent();
     }
 }
