@@ -32,4 +32,22 @@ public class DesignationRepository : IDesignationRepository
         await _context.SaveChangesAsync();
         return designation;
     }
+
+    public async Task<Designation> UpdateAsync(Designation designation)
+    {
+        designation.UpdatedAt = DateTime.UtcNow;
+        _context.Designations.Update(designation);
+        await _context.SaveChangesAsync();
+        return designation;
+    }
+
+    public async System.Threading.Tasks.Task DeleteAsync(Guid id)
+    {
+        var designation = await GetByIdAsync(id);
+        if (designation != null)
+        {
+            _context.Designations.Remove(designation);
+            await _context.SaveChangesAsync();
+        }
+    }
 }

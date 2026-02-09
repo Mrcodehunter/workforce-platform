@@ -1,5 +1,7 @@
 using WorkforceAPI.Models.MongoDB;
 using WorkforceAPI.Repositories;
+using WorkforceAPI.Helpers;
+using Workforce.Shared.Cache;
 using Workforce.Shared.EventPublisher;
 using Workforce.Shared.Events;
 
@@ -9,11 +11,13 @@ public class LeaveRequestService : ILeaveRequestService
 {
     private readonly ILeaveRequestRepository _repository;
     private readonly IRabbitMqPublisher _eventPublisher;
+    private readonly IRedisCache _redisCache;
 
-    public LeaveRequestService(ILeaveRequestRepository repository, IRabbitMqPublisher eventPublisher)
+    public LeaveRequestService(ILeaveRequestRepository repository, IRabbitMqPublisher eventPublisher, IRedisCache redisCache)
     {
         _repository = repository;
         _eventPublisher = eventPublisher;
+        _redisCache = redisCache;
     }
 
     public async Task<IEnumerable<LeaveRequest>> GetAllAsync()
@@ -48,7 +52,14 @@ public class LeaveRequestService : ILeaveRequestService
         
         var result = await _repository.CreateAsync(leaveRequest);
         
-        // Publish event
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "after" snapshot and store in Redis BEFORE publishing event
+        var afterSnapshot = AuditEntitySerializer.SerializeLeaveRequest(result);
+        await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        
+        // Publish event after Redis key is set
         await _eventPublisher.PublishEventAsync(AuditEventType.LeaveRequestCreated, new 
         { 
             LeaveRequestId = result.Id,
@@ -56,14 +67,32 @@ public class LeaveRequestService : ILeaveRequestService
             LeaveType = result.LeaveType,
             StartDate = result.StartDate,
             EndDate = result.EndDate
-        });
+        }, eventId);
         
         return result;
     }
 
     public async Task<LeaveRequest> UpdateStatusAsync(string id, string status, string changedBy, string? comments = null)
     {
+        // Get existing leave request for "before" snapshot
+        var existingLeaveRequest = await _repository.GetByIdAsync(id);
+        if (existingLeaveRequest == null)
+        {
+            throw new InvalidOperationException($"Leave request with ID {id} not found");
+        }
+
+        // Generate event ID first
+        var eventId = Guid.NewGuid().ToString();
+        
+        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        var beforeSnapshot = AuditEntitySerializer.SerializeLeaveRequest(existingLeaveRequest);
+        await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
+        
         var result = await _repository.UpdateStatusAsync(id, status, changedBy, comments);
+        
+        // Capture "after" snapshot
+        var afterSnapshot = AuditEntitySerializer.SerializeLeaveRequest(result);
+        await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         
         // Publish appropriate event based on status
         var eventType = status switch
@@ -74,6 +103,7 @@ public class LeaveRequestService : ILeaveRequestService
             _ => AuditEventType.LeaveRequestUpdated
         };
         
+        // Publish event after Redis keys are set
         await _eventPublisher.PublishEventAsync(eventType, new 
         { 
             LeaveRequestId = result.Id,
@@ -81,7 +111,7 @@ public class LeaveRequestService : ILeaveRequestService
             Status = status,
             ChangedBy = changedBy,
             Comments = comments
-        });
+        }, eventId);
         
         return result;
     }

@@ -125,11 +125,24 @@ public class AuditLogService : IAuditLogService
 
     private string ExtractEntityTypeFromEventType(string eventType)
     {
-        // Event types: employee.created, project.updated, task.deleted, leave.request.approved
+        // Event types: employee.created, project.updated, task.deleted, leave.request.approved, project.member.added
         var parts = eventType.Split('.');
         if (parts.Length > 0)
         {
             var firstPart = parts[0];
+            
+            // Handle special cases
+            if (firstPart == "leave" && parts.Length > 1 && parts[1] == "request")
+            {
+                return "LeaveRequest";
+            }
+            
+            // For project.member.* events, return "Project" as entity type
+            if (firstPart == "project" && parts.Length > 1 && parts[1] == "member")
+            {
+                return "Project";
+            }
+            
             // Capitalize first letter
             return char.ToUpperInvariant(firstPart[0]) + firstPart.Substring(1);
         }
