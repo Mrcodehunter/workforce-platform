@@ -4,6 +4,7 @@
  */
 
 export { employeesApi } from './employees.api';
+export type { PagedResult } from './employees.api';
 export { departmentsApi } from './departments.api';
 export { designationsApi } from './designations.api';
 export { projectsApi } from './projects.api';
