@@ -4,6 +4,9 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
+/// <summary>
+/// API controller for designation management operations
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class DesignationsController : ControllerBase
@@ -11,6 +14,9 @@ public class DesignationsController : ControllerBase
     private readonly IDesignationService _designationService;
     private readonly ILogger<DesignationsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of DesignationsController
+    /// </summary>
     public DesignationsController(IDesignationService designationService, ILogger<DesignationsController> logger)
     {
         _designationService = designationService;

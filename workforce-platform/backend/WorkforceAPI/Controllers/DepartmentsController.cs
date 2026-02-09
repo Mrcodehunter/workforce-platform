@@ -4,6 +4,9 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
+/// <summary>
+/// API controller for department management operations
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class DepartmentsController : ControllerBase
@@ -11,6 +14,9 @@ public class DepartmentsController : ControllerBase
     private readonly IDepartmentService _departmentService;
     private readonly ILogger<DepartmentsController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of DepartmentsController
+    /// </summary>
     public DepartmentsController(IDepartmentService departmentService, ILogger<DepartmentsController> logger)
     {
         _departmentService = departmentService;

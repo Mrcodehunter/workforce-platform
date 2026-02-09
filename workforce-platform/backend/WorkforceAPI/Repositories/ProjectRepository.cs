@@ -4,10 +4,16 @@ using WorkforceAPI.Models;
 
 namespace WorkforceAPI.Repositories;
 
+/// <summary>
+/// Repository implementation for project data access operations
+/// </summary>
 public class ProjectRepository : IProjectRepository
 {
     private readonly WorkforceDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of ProjectRepository
+    /// </summary>
     public ProjectRepository(WorkforceDbContext context)
     {
         _context = context;

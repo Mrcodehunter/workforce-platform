@@ -7,6 +7,9 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
+/// <summary>
+/// API controller for task management operations
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class TasksController : ControllerBase
@@ -15,6 +18,9 @@ public class TasksController : ControllerBase
     private readonly ILogger<TasksController> _logger;
     private readonly IWebHostEnvironment _environment;
 
+    /// <summary>
+    /// Initializes a new instance of TasksController
+    /// </summary>
     public TasksController(
         ITaskService taskService,
         ILogger<TasksController> logger,

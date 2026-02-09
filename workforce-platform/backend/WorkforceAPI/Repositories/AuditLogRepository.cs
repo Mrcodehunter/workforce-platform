@@ -3,11 +3,17 @@ using WorkforceAPI.Models.MongoDB;
 
 namespace WorkforceAPI.Repositories;
 
+/// <summary>
+/// Repository implementation for audit log data access operations (MongoDB)
+/// </summary>
 public class AuditLogRepository : IAuditLogRepository
 {
     private readonly IMongoDatabase _mongoDatabase;
     private IMongoCollection<AuditLog>? _collection;
 
+    /// <summary>
+    /// Initializes a new instance of AuditLogRepository
+    /// </summary>
     public AuditLogRepository(IMongoDatabase mongoDatabase)
     {
         _mongoDatabase = mongoDatabase;

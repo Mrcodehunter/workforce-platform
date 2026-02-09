@@ -3,6 +3,9 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
+/// <summary>
+/// API controller for dashboard summary operations
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class DashboardController : ControllerBase
@@ -10,6 +13,9 @@ public class DashboardController : ControllerBase
     private readonly IDashboardService _dashboardService;
     private readonly ILogger<DashboardController> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of DashboardController
+    /// </summary>
     public DashboardController(IDashboardService dashboardService, ILogger<DashboardController> logger)
     {
         _dashboardService = dashboardService;

@@ -4,10 +4,16 @@ using WorkforceAPI.Models;
 
 namespace WorkforceAPI.Repositories;
 
+/// <summary>
+/// Repository implementation for designation data access operations
+/// </summary>
 public class DesignationRepository : IDesignationRepository
 {
     private readonly WorkforceDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of DesignationRepository
+    /// </summary>
     public DesignationRepository(WorkforceDbContext context)
     {
         _context = context;

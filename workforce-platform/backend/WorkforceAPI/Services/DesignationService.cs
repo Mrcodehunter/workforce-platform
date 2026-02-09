@@ -7,12 +7,21 @@ using Workforce.Shared.Events;
 
 namespace WorkforceAPI.Services;
 
+/// <summary>
+/// Service implementation for designation-related business operations
+/// </summary>
+/// <remarks>
+/// Handles designation CRUD operations with audit trail support.
+/// </remarks>
 public class DesignationService : IDesignationService
 {
     private readonly IDesignationRepository _repository;
     private readonly IRabbitMqPublisher _eventPublisher;
     private readonly IRedisCache _redisCache;
 
+    /// <summary>
+    /// Initializes a new instance of DesignationService
+    /// </summary>
     public DesignationService(IDesignationRepository repository, IRabbitMqPublisher eventPublisher, IRedisCache redisCache)
     {
         _repository = repository;

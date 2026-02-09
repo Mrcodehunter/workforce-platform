@@ -7,12 +7,23 @@ using WorkforceAPI.Repositories;
 
 namespace WorkforceAPI.Services;
 
+/// <summary>
+/// Service implementation for dashboard summary operations
+/// </summary>
+/// <remarks>
+/// Aggregates data from both PostgreSQL (employees, projects, tasks) and MongoDB (leave requests)
+/// to provide comprehensive dashboard statistics. This service directly accesses DbContext
+/// and MongoDB for performance reasons (aggregation queries).
+/// </remarks>
 public class DashboardService : IDashboardService
 {
     private readonly WorkforceDbContext _dbContext;
     private readonly IMongoDatabase _mongoDatabase;
     private readonly ILogger<DashboardService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of DashboardService
+    /// </summary>
     public DashboardService(
         WorkforceDbContext dbContext,
         IMongoDatabase mongoDatabase,

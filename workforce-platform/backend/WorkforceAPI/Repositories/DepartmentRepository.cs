@@ -4,10 +4,16 @@ using WorkforceAPI.Models;
 
 namespace WorkforceAPI.Repositories;
 
+/// <summary>
+/// Repository implementation for department data access operations
+/// </summary>
 public class DepartmentRepository : IDepartmentRepository
 {
     private readonly WorkforceDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of DepartmentRepository
+    /// </summary>
     public DepartmentRepository(WorkforceDbContext context)
     {
         _context = context;

@@ -4,10 +4,16 @@ using WorkforceAPI.Models;
 
 namespace WorkforceAPI.Repositories;
 
+/// <summary>
+/// Repository implementation for task data access operations
+/// </summary>
 public class TaskRepository : ITaskRepository
 {
     private readonly WorkforceDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of TaskRepository
+    /// </summary>
     public TaskRepository(WorkforceDbContext context)
     {
         _context = context;

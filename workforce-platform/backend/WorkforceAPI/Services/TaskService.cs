@@ -411,9 +411,34 @@ public class TaskService : ITaskService
         return reloaded ?? result;
     }
 
+    /// <summary>
+    /// Updates only the status of a task
+    /// </summary>
+    /// <param name="taskId">The unique identifier of the task</param>
+    /// <param name="status">The new status value</param>
+    /// <returns>The updated task</returns>
+    /// <exception cref="ValidationException">Thrown if status is invalid</exception>
+    /// <exception cref="EntityNotFoundException">Thrown if task doesn't exist</exception>
+    /// <remarks>
+    /// This is a specialized method for status updates (e.g., from task board drag-and-drop).
+    /// It validates the status value against allowed values and implements the complete audit trail workflow.
+    /// 
+    /// The workflow:
+    /// 1. Validates input parameters
+    /// 2. Validates status value against allowed values
+    /// 3. Retrieves existing task
+    /// 4. Stores "before" snapshot in Redis
+    /// 5. Updates status and timestamp
+    /// 6. Saves to database
+    /// 7. Stores "after" snapshot in Redis
+    /// 8. Publishes TaskStatusUpdated event
+    /// 
+    /// This method publishes a different event type (TaskStatusUpdated) than UpdateAsync (TaskUpdated)
+    /// to distinguish status-only changes from full updates.
+    /// </remarks>
     public async Task<TaskItem> UpdateTaskStatusAsync(Guid taskId, string status)
     {
-        // Validate input
+        // Validate input parameters
         if (taskId == Guid.Empty)
         {
             throw new ValidationException("Task ID is required", nameof(taskId));
@@ -424,29 +449,33 @@ public class TaskService : ITaskService
             throw new ValidationException("Status is required", nameof(status));
         }
 
-        // Validate status value
+        // Validate status value against allowed values
+        // Business rule: Status must be one of the predefined values
         var validStatuses = new[] { "ToDo", "InProgress", "InReview", "Done", "Cancelled" };
         if (!validStatuses.Contains(status))
         {
             throw new ValidationException($"Invalid status. Must be one of: {string.Join(", ", validStatuses)}", nameof(status), status);
         }
 
+        // Retrieve existing task to verify it exists and capture "before" snapshot
         var task = await _repository.GetByIdAsync(taskId);
         if (task == null)
         {
             throw new EntityNotFoundException("Task", taskId);
         }
 
-        // Generate event ID first
+        // Generate event ID for correlation with Redis snapshots
         var eventId = Guid.NewGuid().ToString();
         
-        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        // Capture "before" snapshot and store in Redis BEFORE making changes
         var beforeSnapshot = AuditEntitySerializer.SerializeTaskItem(task);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
 
+        // Update only status and timestamp (preserve other fields)
         task.Status = status;
         task.UpdatedAt = DateTime.UtcNow;
 
+        // Save changes to database
         var result = await _repository.UpdateAsync(task);
         
         // Reload with navigation properties and capture "after" snapshot
@@ -458,32 +487,55 @@ public class TaskService : ITaskService
         }
         
         // Publish event AFTER both before and after snapshots are stored in Redis
+        // Use TaskStatusUpdated event type to distinguish from full updates
         await _eventPublisher.PublishEventAsync(AuditEventType.TaskStatusUpdated, new { TaskId = taskId, Status = status, ProjectId = task.ProjectId }, eventId);
         
         return reloaded ?? result;
     }
 
+    /// <summary>
+    /// Deletes a task (soft delete)
+    /// </summary>
+    /// <param name="id">The unique identifier of the task to delete</param>
+    /// <remarks>
+    /// This method performs a soft delete (sets IsDeleted flag) and implements the audit trail workflow.
+    /// 
+    /// The workflow:
+    /// 1. Retrieves existing task
+    /// 2. Stores "before" snapshot in Redis (captures state before deletion)
+    /// 3. Performs soft delete (sets IsDeleted = true)
+    /// 4. Publishes TaskDeleted event
+    /// 
+    /// Note: For soft deletes, there is no "after" snapshot (entity is deleted).
+    /// The audit trail will show the entity state before deletion.
+    /// </remarks>
     public async Task DeleteAsync(Guid id)
     {
         // Capture "before" snapshot before deletion
+        // This is important for audit trail - we need to record what was deleted
         var existingTask = await _repository.GetByIdAsync(id);
         if (existingTask != null)
         {
-            // Generate event ID first
+            // Generate event ID for correlation with Redis snapshot
             var eventId = Guid.NewGuid().ToString();
             
-            // Step 1: Save beforeSnapshot into Redis
+            // Step 1: Save "before" snapshot into Redis
+            // This captures the task state before deletion for audit trail
             var beforeSnapshot = AuditEntitySerializer.SerializeTaskItem(existingTask);
             await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
             
             // Step 2 & 3: Execute business logic and DB operations
+            // Repository performs soft delete (sets IsDeleted = true)
             await _repository.DeleteAsync(id);
             
             // Step 6: Publish the event (after all operations completed)
+            // No "after" snapshot for delete operations (entity no longer exists)
             await _eventPublisher.PublishEventAsync(AuditEventType.TaskDeleted, new { TaskId = id }, eventId);
         }
         else
         {
+            // If task doesn't exist, still attempt delete (idempotent operation)
+            // This allows delete operations to be safely retried
             await _repository.DeleteAsync(id);
         }
     }

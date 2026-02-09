@@ -4,10 +4,16 @@ using WorkforceAPI.Models;
 
 namespace WorkforceAPI.Repositories;
 
+/// <summary>
+/// Repository implementation for employee data access operations
+/// </summary>
 public class EmployeeRepository : IEmployeeRepository
 {
     private readonly WorkforceDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of EmployeeRepository
+    /// </summary>
     public EmployeeRepository(WorkforceDbContext context)
     {
         _context = context;

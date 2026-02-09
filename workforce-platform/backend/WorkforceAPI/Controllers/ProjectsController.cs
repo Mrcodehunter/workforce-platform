@@ -7,6 +7,9 @@ using WorkforceAPI.Services;
 
 namespace WorkforceAPI.Controllers;
 
+/// <summary>
+/// API controller for project management operations
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class ProjectsController : ControllerBase
@@ -16,6 +19,9 @@ public class ProjectsController : ControllerBase
     private readonly ILogger<ProjectsController> _logger;
     private readonly IWebHostEnvironment _environment;
 
+    /// <summary>
+    /// Initializes a new instance of ProjectsController
+    /// </summary>
     public ProjectsController(
         IProjectService projectService,
         ITaskService taskService,
