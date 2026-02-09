@@ -59,7 +59,10 @@ That's it! Docker will handle all other dependencies.
 4. **Access the application**
    - **Frontend**: http://localhost:3000
    - **API**: http://localhost:5000
-   - **API Documentation (Scalar)**: http://localhost:5000 (auto-opens in browser)
+   - **API Documentation (Scalar)**: 
+     - Primary URL: http://localhost:5000/scalar/v1
+     - Root redirect: http://localhost:5000/ (redirects to Scalar)
+     - OpenAPI JSON: http://localhost:5000/openapi/v1.json
    - **RabbitMQ Management**: http://localhost:15672 (guest/guest)
 
 ### First Time Setup
@@ -296,7 +299,21 @@ Base URL: `http://localhost:5000/api`
 ### Health Check
 - `GET /health` - API health status
 
-**Full API documentation available at:** http://localhost:5000 (Scalar UI - auto-opens in browser)
+### API Documentation
+
+**Scalar API Documentation** is available when running in Docker containers:
+
+- **Primary URL**: http://localhost:5000/scalar/v1
+- **Root Redirect**: http://localhost:5000/ (automatically redirects to Scalar)
+- **OpenAPI JSON**: http://localhost:5000/openapi/v1.json
+
+The Scalar documentation provides:
+- Interactive API explorer with all endpoints
+- Request/response schemas and examples
+- Try-it-out functionality to test endpoints directly
+- Modern, user-friendly interface
+
+**Note**: Scalar is available in all environments (Development, Production) when running in Docker containers.
 
 ## 🧪 Development
 
@@ -438,6 +455,7 @@ docker compose up --build
 
 - **RabbitMQ**: http://localhost:15672 - Monitor message queues
 - **API Health**: http://localhost:5000/health
+- **API Documentation**: http://localhost:5000/scalar/v1 - Interactive API explorer
 - **Logs**: `docker compose logs -f [service-name]`
 
 ## 🤖 AI-Assisted Development

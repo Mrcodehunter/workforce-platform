@@ -114,26 +114,26 @@ var app = builder.Build();
 // Configure the HTTP request pipeline
 // Middleware order is important - they execute in the order they are added
 
-// Development-only features
-if (app.Environment.IsDevelopment())
+// OpenAPI and Scalar API Documentation
+// Map OpenAPI/Swagger JSON endpoint
+// This generates the OpenAPI specification from controller attributes and DTOs
+// Accessible at /openapi/v1.json
+app.MapOpenApi();
+
+// Map Scalar API documentation UI
+// Scalar is a modern alternative to Swagger UI with better UX
+// Accessible at /scalar/v1 when running in Docker: http://localhost:5000/scalar/v1
+// The documentation is available in all environments for easy API exploration
+app.MapScalarApiReference(options =>
 {
-    // Map OpenAPI/Swagger JSON endpoint
-    // This generates the OpenAPI specification from controller attributes and DTOs
-    app.MapOpenApi();
-    
-    // Map Scalar API documentation UI
-    // Scalar is a modern alternative to Swagger UI with better UX
-    // Accessible at /scalar/v1
-    app.MapScalarApiReference(options =>
-    {
-        options
-            .WithTitle("Workforce Management API")
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
-    });
-    
-    // Redirect root path to Scalar documentation for convenience
-    app.MapGet("/", () => Results.Redirect("/scalar/v1"));
-}
+    options
+        .WithTitle("Workforce Management API")
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+});
+
+// Redirect root path to Scalar documentation for convenience
+// When accessing http://localhost:5000/, it redirects to /scalar/v1
+app.MapGet("/", () => Results.Redirect("/scalar/v1"));
 
 // CORS must be before UseAuthorization and MapControllers
 // This allows cross-origin requests from the frontend
