@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { employeesApi } from '../api';
+import { employeesApi, type PagedResult } from '../api';
 import type { Employee } from '../types';
 
 export const useEmployees = () => {
@@ -7,6 +7,14 @@ export const useEmployees = () => {
     queryKey: ['employees'],
     queryFn: employeesApi.getAll,
   });
+};
+
+export const useEmployeesPaged = (page: number = 1, pageSize: number = 10) => {
+  return useQuery({
+    queryKey: ['employees', 'paged', page, pageSize],
+    queryFn: () => employeesApi.getPaged(page, pageSize),
+    keepPreviousData: true, // Keep previous data while loading new page
+  }) as ReturnType<typeof useQuery<PagedResult<Employee>>>;
 };
 
 export const useEmployee = (id: string) => {

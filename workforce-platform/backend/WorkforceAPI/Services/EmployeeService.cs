@@ -50,6 +50,48 @@ public class EmployeeService : IEmployeeService
         });
     }
 
+    public async Task<PagedResult<EmployeeListDto>> GetPagedAsync(int page, int pageSize)
+    {
+        // Validate pagination parameters
+        if (page < 1) page = 1;
+        if (pageSize < 1) pageSize = 10;
+        if (pageSize > 100) pageSize = 100; // Max page size limit
+
+        var (employees, totalCount) = await _repository.GetPagedAsync(page, pageSize);
+        
+        var data = employees.Select(e => new EmployeeListDto
+        {
+            Id = e.Id,
+            FirstName = e.FirstName,
+            LastName = e.LastName,
+            Email = e.Email,
+            IsActive = e.IsActive,
+            Phone = e.Phone,
+            AvatarUrl = e.AvatarUrl,
+            Department = e.Department != null ? new DepartmentDto
+            {
+                Id = e.Department.Id,
+                Name = e.Department.Name,
+                Description = e.Department.Description
+            } : null,
+            Designation = e.Designation != null ? new DesignationDto
+            {
+                Id = e.Designation.Id,
+                Title = e.Designation.Title,
+                Level = e.Designation.Level,
+                Description = e.Designation.Description
+            } : null
+        });
+
+        return new PagedResult<EmployeeListDto>
+        {
+            Data = data,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount
+        };
+    }
+
     public async Task<EmployeeDetailDto?> GetByIdAsync(Guid id)
     {
         var employee = await _repository.GetByIdAsync(id);
