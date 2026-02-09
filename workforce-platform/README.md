@@ -78,6 +78,11 @@ workforce-platform/
 │   │   ├── DTOs/              # Data transfer objects
 │   │   ├── Data/              # Database contexts
 │   │   └── EventPublisher/    # RabbitMQ publisher
+│   ├── Workforce.Shared/      # Shared library
+│   │   ├── Cache/             # Redis cache implementation
+│   │   ├── EventPublisher/    # RabbitMQ publisher
+│   │   ├── Events/            # Event type definitions
+│   │   └── DependencyInjection/  # DI extensions
 │   └── WorkerService.AuditLogger/  # Audit logging worker
 │       ├── Services/
 │       └── Models/

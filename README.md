@@ -1,4 +1,5 @@
 # Workforce Management Platform
+
 A distributed workforce management system built with .NET, React, TypeScript, PostgreSQL, MongoDB, and RabbitMQ. This platform handles employee management, project tracking, task management, and leave/time-off requests using an event-driven microservices architecture.
 
 ## 🏗️ System Architecture
@@ -77,6 +78,11 @@ workforce-platform/
 │   │   ├── DTOs/              # Data transfer objects
 │   │   ├── Data/              # Database contexts
 │   │   └── EventPublisher/    # RabbitMQ publisher
+│   ├── Workforce.Shared/      # Shared library
+│   │   ├── Cache/             # Redis cache implementation
+│   │   ├── EventPublisher/    # RabbitMQ publisher
+│   │   ├── Events/            # Event type definitions
+│   │   └── DependencyInjection/  # DI extensions
 │   └── WorkerService.AuditLogger/  # Audit logging worker
 │       ├── Services/
 │       └── Models/
