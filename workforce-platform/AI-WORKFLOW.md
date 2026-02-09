@@ -41,6 +41,13 @@ AI was heavily used for initial architecture design:
    - Event publisher design
    - Worker service patterns
 
+4. **Dependency Injection & Configuration**
+   - AI assisted in restructuring backend for better architecture
+   - Created centralized DI in `Workforce.Shared` for Redis and RabbitMQ
+   - Implemented environment-aware configuration (Development/Production)
+   - Applied Options Pattern for type-safe configuration
+   - Documented in `AI_Planning/backend_restructuring_plan.md`
+
 ### Design Decisions with AI Assistance
 - **Dual Database Strategy**: AI helped justify PostgreSQL for relational data and MongoDB for documents
 - **Polyglot Workers**: AI suggested using .NET for audit logging and Node.js for report generation

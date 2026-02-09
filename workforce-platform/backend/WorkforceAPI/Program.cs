@@ -42,23 +42,25 @@ builder.Services.AddFluentValidationClientsideAdapters();
 // Database Configuration
 // PostgreSQL
 var postgresConnection = builder.Configuration.GetConnectionString("PostgreSQL");
+if (string.IsNullOrEmpty(postgresConnection))
+{
+    var environmentName = builder.Environment.EnvironmentName;
+    postgresConnection = environmentName.Equals("Development", StringComparison.OrdinalIgnoreCase)
+        ? "Host=localhost;Port=5432;Database=workforce_db;Username=postgres;Password=postgres"
+        : "Host=postgres;Port=5432;Database=workforce_db;Username=admin;Password=changeme";
+}
+
 builder.Services.AddDbContext<WorkforceDbContext>(options =>
     options.UseNpgsql(postgresConnection));
 
-// MongoDB
-var mongoConnection = builder.Configuration.GetConnectionString("MongoDB");
-var mongoClient = new MongoClient(mongoConnection);
-var mongoDatabase = mongoClient.GetDatabase(builder.Configuration["MongoDB:DatabaseName"]);
-builder.Services.AddSingleton<IMongoDatabase>(mongoDatabase);
+// MongoDB (using shared infrastructure extension)
+builder.Services.AddMongoDatabase(builder.Configuration);
 
 // Database Seeder
 builder.Services.AddScoped<DatabaseSeeder>();
 
-// Redis Cache (from shared library)
-builder.Services.AddRedisCache(builder.Configuration);
-
-// RabbitMQ Event Publisher (from shared library)
-builder.Services.AddRabbitMqPublisher();
+// Shared Infrastructure (Redis, RabbitMQ) - centralized DI with environment awareness
+builder.Services.AddSharedInfrastructure(builder.Configuration);
 
 // Repositories
 builder.Services.AddRepositories();

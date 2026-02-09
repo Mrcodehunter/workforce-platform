@@ -79,15 +79,21 @@ workforce-platform/
 ├── backend/                    # .NET Backend Services
 │   ├── WorkforceAPI/          # REST API Server
 │   │   ├── Controllers/       # API endpoints
-│   │   ├── Services/          # Business logic
+│   │   ├── Services/          # Business logic layer
 │   │   ├── Repositories/      # Data access layer
 │   │   ├── Models/            # Domain entities
 │   │   ├── DTOs/              # Data transfer objects
 │   │   ├── Data/              # Database contexts
-│   │   └── EventPublisher/    # RabbitMQ publisher
-│   └── WorkerService.AuditLogger/  # Audit logging worker
-│       ├── Services/
-│       └── Models/
+│   │   └── DependencyInjection.cs  # DI registration
+│   ├── WorkerService.AuditLogger/  # Audit logging worker
+│   │   ├── Services/
+│   │   └── Models/
+│   └── Workforce.Shared/      # Shared infrastructure library
+│       ├── Cache/             # Redis cache implementation
+│       ├── Configuration/     # Configuration options classes
+│       ├── DependencyInjection/  # Centralized DI extensions
+│       ├── EventPublisher/    # RabbitMQ publisher
+│       └── Events/            # Event type definitions
 ├── frontend/                   # React Frontend
 │   ├── src/
 │   │   ├── api/               # API communication layer
@@ -119,10 +125,18 @@ workforce-platform/
 - **Entity Framework Core** - PostgreSQL ORM
 - **MongoDB Driver** - Document database client
 - **RabbitMQ.Client** - Message broker integration
+- **StackExchange.Redis** - Redis cache client
 - **Serilog** - Structured logging
 - **AutoMapper** - Object mapping
 - **FluentValidation** - Input validation
 - **Scalar** - Modern API documentation (replaces Swagger)
+
+### Architecture Patterns
+- **Dependency Injection** - Centralized DI configuration in `Workforce.Shared`
+- **Options Pattern** - Environment-aware configuration (Development/Production)
+- **Repository Pattern** - Clean separation of data access
+- **Service Layer** - Business logic abstraction
+- **Event-Driven Architecture** - RabbitMQ for async communication
 
 ### Frontend
 - **React 18** - UI framework
@@ -172,6 +186,43 @@ workforce-platform/
 - Flexible schema for audit logs (different event types)
 - High write throughput for audit logging
 - Natural fit for embedded arrays (approval workflow)
+
+## 🏛️ Architecture & Design
+
+### Dependency Injection Structure
+
+The backend uses a centralized dependency injection approach with environment-aware configuration:
+
+**Shared Infrastructure (`Workforce.Shared`)**
+- `ServiceCollectionExtensions` - Centralized DI entry point
+- `RedisExtensions` - Redis cache configuration with environment defaults
+- `RabbitMqExtensions` - RabbitMQ publisher configuration
+- Configuration options classes (`RedisOptions`, `RabbitMqOptions`) for type-safe settings
+
+**Environment-Aware Configuration**
+- **Development**: Uses `localhost` for all services (Redis, RabbitMQ, MongoDB)
+- **Production**: Uses Docker service names (`redis`, `rabbitmq`, `mongodb`)
+- Configuration files: `appsettings.json`, `appsettings.Development.json`, `appsettings.Production.json`
+
+**Benefits:**
+- Single source of truth for infrastructure configuration
+- Easy to switch between local development and Docker environments
+- Type-safe configuration with validation
+- Graceful degradation when services are unavailable
+
+### Design Decisions
+
+**Why Centralized DI?**
+- Reduces code duplication across projects (API and Workers)
+- Ensures consistent configuration across services
+- Makes it easier to add new services or change infrastructure
+- Improves testability with mockable interfaces
+
+**Why Options Pattern?**
+- Type-safe configuration access
+- Environment-specific defaults
+- Validation at startup
+- Easy to extend with new settings
 
 ## 🔄 Event-Driven Architecture
 
@@ -254,6 +305,10 @@ Base URL: `http://localhost:5000/api`
 **Backend (Hot Reload)**
 ```bash
 cd backend/WorkforceAPI
+# Set environment to Development (uses localhost for services)
+export ASPNETCORE_ENVIRONMENT=Development  # Linux/Mac
+# or
+$env:ASPNETCORE_ENVIRONMENT="Development"  # Windows PowerShell
 dotnet watch run
 ```
 
@@ -268,6 +323,9 @@ npm run dev
 ```bash
 # .NET Worker
 cd backend/WorkerService.AuditLogger
+export DOTNET_ENVIRONMENT=Development  # Linux/Mac
+# or
+$env:DOTNET_ENVIRONMENT="Development"  # Windows PowerShell
 dotnet watch run
 
 # Node.js Worker
@@ -275,6 +333,14 @@ cd workers/report-generator
 npm install
 npm run dev
 ```
+
+**Note**: When running locally (not in Docker), ensure you have:
+- PostgreSQL running on `localhost:5432`
+- MongoDB running on `localhost:27017`
+- RabbitMQ running on `localhost:5672`
+- Redis running on `localhost:6379`
+
+The application will automatically use `localhost` connections when `ASPNETCORE_ENVIRONMENT=Development`.
 
 ### Database Migrations
 
