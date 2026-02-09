@@ -388,19 +388,6 @@ This project was built using AI coding assistants. See [AI-WORKFLOW.md](./AI-WOR
 - **[Planning Documents](./AI_Planning/)** - Architecture and implementation plans
 - **[Interaction History](./AI_Interaction_History/)** - AI interaction logs
 
-## 🤝 Contributing
-
-This is an assignment project, but suggestions are welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'feat: Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is for educational purposes as part of a distributed systems assignment.
 
 ## 👤 Author
 
