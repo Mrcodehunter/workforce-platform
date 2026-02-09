@@ -154,14 +154,11 @@ public class EmployeeService : IEmployeeService
         // Generate event ID first
         var eventId = Guid.NewGuid().ToString();
         
-        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        // Step 1: Save beforeSnapshot into Redis
         var beforeSnapshot = AuditEntitySerializer.SerializeEmployee(existingEmployee);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
-        
-        // Publish event after Redis key is set
-        await _eventPublisher.PublishEventAsync(AuditEventType.EmployeeUpdated, new { EmployeeId = employee.Id }, eventId);
 
-        // Update only the properties that should be updated
+        // Step 2: Execute business logic - Update only the properties that should be updated
         existingEmployee.FirstName = employee.FirstName;
         existingEmployee.LastName = employee.LastName;
         existingEmployee.Email = employee.Email;
@@ -178,15 +175,21 @@ public class EmployeeService : IEmployeeService
         existingEmployee.IsActive = employee.IsActive;
         existingEmployee.UpdatedAt = DateTime.UtcNow;
 
+        // Step 3: Execute DB operations
         var result = await _repository.UpdateAsync(existingEmployee);
         
-        // Reload with navigation properties and capture "after" snapshot
+        // Step 4: Retrieve updated data from DB
         var reloaded = await _repository.GetByIdAsync(result.Id);
+        
+        // Step 5: Save afterSnapshot into Redis
         if (reloaded != null)
         {
             var afterSnapshot = AuditEntitySerializer.SerializeEmployee(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
+        
+        // Step 6: Publish the event (after all operations completed)
+        await _eventPublisher.PublishEventAsync(AuditEventType.EmployeeUpdated, new { EmployeeId = employee.Id }, eventId);
         
         return reloaded ?? result;
     }
@@ -200,14 +203,19 @@ public class EmployeeService : IEmployeeService
             // Generate event ID first
             var eventId = Guid.NewGuid().ToString();
             
-            // Store "before" snapshot in Redis BEFORE publishing event
+            // Step 1: Save beforeSnapshot into Redis
             var beforeSnapshot = AuditEntitySerializer.SerializeEmployee(existingEmployee);
             await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
             
-            // Publish event after Redis key is set
+            // Step 2 & 3: Execute business logic and DB operations
+            await _repository.DeleteAsync(id);
+            
+            // Step 6: Publish the event (after all operations completed)
             await _eventPublisher.PublishEventAsync(AuditEventType.EmployeeDeleted, new { EmployeeId = id }, eventId);
         }
-        
-        await _repository.DeleteAsync(id);
+        else
+        {
+            await _repository.DeleteAsync(id);
+        }
     }
 }

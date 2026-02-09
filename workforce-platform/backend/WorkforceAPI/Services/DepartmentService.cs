@@ -59,18 +59,20 @@ public class DepartmentService : IDepartmentService
         // Generate event ID first
         var eventId = Guid.NewGuid().ToString();
         
-        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        // Step 1: Save beforeSnapshot into Redis
         var beforeSnapshot = AuditEntitySerializer.SerializeDepartment(existingDepartment);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
-        
-        // Publish event after Redis key is set
-        await _eventPublisher.PublishEventAsync(AuditEventType.DepartmentUpdated, new { DepartmentId = department.Id }, eventId);
 
+        // Step 2 & 3: Execute business logic and DB operations
         var result = await _repository.UpdateAsync(department);
         
-        // Capture "after" snapshot
+        // Step 4: Retrieve updated data from DB (result is already the updated entity)
+        // Step 5: Save afterSnapshot into Redis
         var afterSnapshot = AuditEntitySerializer.SerializeDepartment(result);
         await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
+        
+        // Step 6: Publish the event (after all operations completed)
+        await _eventPublisher.PublishEventAsync(AuditEventType.DepartmentUpdated, new { DepartmentId = department.Id }, eventId);
         
         return result;
     }
@@ -84,14 +86,19 @@ public class DepartmentService : IDepartmentService
             // Generate event ID first
             var eventId = Guid.NewGuid().ToString();
             
-            // Store "before" snapshot in Redis BEFORE publishing event
+            // Step 1: Save beforeSnapshot into Redis
             var beforeSnapshot = AuditEntitySerializer.SerializeDepartment(existingDepartment);
             await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
             
-            // Publish event after Redis key is set
+            // Step 2 & 3: Execute business logic and DB operations
+            await _repository.DeleteAsync(id);
+            
+            // Step 6: Publish the event (after all operations completed)
             await _eventPublisher.PublishEventAsync(AuditEventType.DepartmentDeleted, new { DepartmentId = id }, eventId);
         }
-        
-        await _repository.DeleteAsync(id);
+        else
+        {
+            await _repository.DeleteAsync(id);
+        }
     }
 }

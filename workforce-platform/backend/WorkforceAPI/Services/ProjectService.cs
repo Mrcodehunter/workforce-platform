@@ -140,14 +140,11 @@ public class ProjectService : IProjectService
         // Generate event ID first
         var eventId = Guid.NewGuid().ToString();
         
-        // Capture "before" snapshot and store in Redis BEFORE publishing event
+        // Step 1: Save beforeSnapshot into Redis
         var beforeSnapshot = AuditEntitySerializer.SerializeProject(existingProject);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
-        
-        // Publish event after Redis key is set
-        await _eventPublisher.PublishEventAsync(AuditEventType.ProjectUpdated, new { ProjectId = project.Id }, eventId);
 
-        // Update only the properties that should be updated
+        // Step 2: Execute business logic - Update only the properties that should be updated
         existingProject.Name = project.Name;
         existingProject.Description = project.Description;
         existingProject.Status = project.Status;
@@ -155,16 +152,22 @@ public class ProjectService : IProjectService
         existingProject.EndDate = project.EndDate;
         existingProject.UpdatedAt = DateTime.UtcNow;
 
+        // Step 3: Execute DB operations
         var result = await _repository.UpdateAsync(existingProject);
         
-        // Reload with navigation properties and capture "after" snapshot
+        // Step 4: Retrieve updated data from DB
         // Use ReloadWithNavigationPropertiesAsync to get fresh data from database
         var reloaded = await _repository.ReloadWithNavigationPropertiesAsync(result.Id);
+        
+        // Step 5: Save afterSnapshot into Redis
         if (reloaded != null)
         {
             var afterSnapshot = AuditEntitySerializer.SerializeProject(reloaded);
             await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         }
+        
+        // Step 6: Publish the event (after all operations completed)
+        await _eventPublisher.PublishEventAsync(AuditEventType.ProjectUpdated, new { ProjectId = project.Id }, eventId);
         
         return reloaded ?? result;
     }
@@ -178,15 +181,20 @@ public class ProjectService : IProjectService
             // Generate event ID first
             var eventId = Guid.NewGuid().ToString();
             
-            // Store "before" snapshot in Redis BEFORE publishing event
+            // Step 1: Save beforeSnapshot into Redis
             var beforeSnapshot = AuditEntitySerializer.SerializeProject(existingProject);
             await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
             
-            // Publish event after Redis key is set
+            // Step 2 & 3: Execute business logic and DB operations
+            await _repository.DeleteAsync(id);
+            
+            // Step 6: Publish the event (after all operations completed)
             await _eventPublisher.PublishEventAsync(AuditEventType.ProjectDeleted, new { ProjectId = id }, eventId);
         }
-        
-        await _repository.DeleteAsync(id);
+        else
+        {
+            await _repository.DeleteAsync(id);
+        }
     }
 
     public async Task<ProjectDetailDto> AddMemberAsync(Guid projectId, Guid employeeId, string? role)
@@ -215,11 +223,11 @@ public class ProjectService : IProjectService
         // Generate event ID first
         var eventId = Guid.NewGuid().ToString();
         
-        // Capture "before" snapshot (project before member addition)
+        // Step 1: Save beforeSnapshot into Redis
         var beforeSnapshot = AuditEntitySerializer.SerializeProject(project);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
 
-        // Create project member
+        // Step 2: Execute business logic - Create project member
         var projectMember = new ProjectMember
         {
             ProjectId = projectId,
@@ -228,20 +236,21 @@ public class ProjectService : IProjectService
             JoinedAt = DateTime.UtcNow
         };
 
+        // Step 3: Execute DB operations
         await _repository.AddMemberAsync(projectMember);
 
-        // Reload project with updated members
+        // Step 4: Retrieve updated data from DB
         var updatedProject = await _repository.ReloadWithNavigationPropertiesAsync(projectId);
         if (updatedProject == null)
         {
             throw new InvalidOperationException($"Failed to reload project {projectId} after adding member");
         }
         
-        // Capture "after" snapshot and store in Redis BEFORE publishing event
-        var afterSnapshot = JsonSerializer.Serialize(updatedProject, new JsonSerializerOptions { ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles });
+        // Step 5: Save afterSnapshot into Redis
+        var afterSnapshot = AuditEntitySerializer.SerializeProject(updatedProject);
         await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         
-        // Publish event after Redis keys are set
+        // Step 6: Publish the event (after all operations completed)
         await _eventPublisher.PublishEventAsync(AuditEventType.ProjectMemberAdded, new { ProjectId = projectId, EmployeeId = employeeId, Role = role }, eventId);
 
         // Convert to DTO
@@ -310,25 +319,25 @@ public class ProjectService : IProjectService
         // Generate event ID first
         var eventId = Guid.NewGuid().ToString();
         
-        // Capture "before" snapshot (project before member removal)
+        // Step 1: Save beforeSnapshot into Redis
         var beforeSnapshot = AuditEntitySerializer.SerializeProject(project);
         await _redisCache.SetAsync($"audit:{eventId}:before", beforeSnapshot, TimeSpan.FromHours(1));
 
-        // Remove member
+        // Step 2 & 3: Execute business logic and DB operations - Remove member
         await _repository.RemoveMemberAsync(projectId, employeeId);
 
-        // Reload project with updated members
+        // Step 4: Retrieve updated data from DB
         var updatedProject = await _repository.ReloadWithNavigationPropertiesAsync(projectId);
         if (updatedProject == null)
         {
             throw new InvalidOperationException($"Failed to reload project {projectId} after removing member");
         }
         
-        // Capture "after" snapshot and store in Redis BEFORE publishing event
+        // Step 5: Save afterSnapshot into Redis
         var afterSnapshot = AuditEntitySerializer.SerializeProject(updatedProject);
         await _redisCache.SetAsync($"audit:{eventId}:after", afterSnapshot, TimeSpan.FromHours(1));
         
-        // Publish event after Redis keys are set
+        // Step 6: Publish the event (after all operations completed)
         await _eventPublisher.PublishEventAsync(AuditEventType.ProjectMemberRemoved, new { ProjectId = projectId, EmployeeId = employeeId }, eventId);
 
         // Convert to DTO
