@@ -1,7 +1,6 @@
 using WorkforceAPI.Models.MongoDB;
 using WorkforceAPI.Repositories;
 using WorkforceAPI.Helpers;
-using WorkforceAPI.Exceptions;
 using Workforce.Shared.Cache;
 using Workforce.Shared.EventPublisher;
 using Workforce.Shared.Events;
@@ -21,59 +20,14 @@ public class LeaveRequestService : ILeaveRequestService
         _redisCache = redisCache;
     }
 
-    public async Task<IEnumerable<LeaveRequest>> GetAllAsync(string? status = null, string? leaveType = null, Guid? employeeId = null)
+    public async Task<IEnumerable<LeaveRequest>> GetAllAsync()
     {
-        IEnumerable<LeaveRequest> leaveRequests;
-
-        // Apply filters based on provided parameters
-        if (employeeId.HasValue && employeeId.Value != Guid.Empty)
-        {
-            leaveRequests = await _repository.GetByEmployeeIdAsync(employeeId.Value);
-        }
-        else if (!string.IsNullOrWhiteSpace(status))
-        {
-            leaveRequests = await _repository.GetByStatusAsync(status);
-        }
-        else if (!string.IsNullOrWhiteSpace(leaveType))
-        {
-            leaveRequests = await _repository.GetByLeaveTypeAsync(leaveType);
-        }
-        else
-        {
-            leaveRequests = await _repository.GetAllAsync();
-        }
-
-        // Apply additional filters if multiple are provided
-        if (!string.IsNullOrWhiteSpace(status) && leaveRequests.Any())
-        {
-            leaveRequests = leaveRequests.Where(lr => lr.Status == status);
-        }
-        if (!string.IsNullOrWhiteSpace(leaveType) && leaveRequests.Any())
-        {
-            leaveRequests = leaveRequests.Where(lr => lr.LeaveType == leaveType);
-        }
-        if (employeeId.HasValue && employeeId.Value != Guid.Empty && leaveRequests.Any())
-        {
-            leaveRequests = leaveRequests.Where(lr => lr.EmployeeId == employeeId.Value);
-        }
-
-        return leaveRequests;
+        return await _repository.GetAllAsync();
     }
 
-    public async Task<LeaveRequest> GetByIdAsync(string id)
+    public async Task<LeaveRequest?> GetByIdAsync(string id)
     {
-        if (string.IsNullOrWhiteSpace(id))
-        {
-            throw new ValidationException("Leave request ID is required", nameof(id));
-        }
-
-        var leaveRequest = await _repository.GetByIdAsync(id);
-        if (leaveRequest == null)
-        {
-            throw new EntityNotFoundException("LeaveRequest", id);
-        }
-
-        return leaveRequest;
+        return await _repository.GetByIdAsync(id);
     }
 
     public async Task<IEnumerable<LeaveRequest>> GetByEmployeeIdAsync(Guid employeeId)
@@ -120,29 +74,11 @@ public class LeaveRequestService : ILeaveRequestService
 
     public async Task<LeaveRequest> UpdateStatusAsync(string id, string status, string changedBy, string? comments = null)
     {
-        // Validate input
-        if (string.IsNullOrWhiteSpace(id))
-        {
-            throw new ValidationException("Leave request ID is required", nameof(id));
-        }
-
-        if (string.IsNullOrWhiteSpace(status))
-        {
-            throw new ValidationException("Status is required", nameof(status));
-        }
-
-        // Validate status value
-        var validStatuses = new[] { "Approved", "Rejected", "Cancelled" };
-        if (!validStatuses.Contains(status))
-        {
-            throw new ValidationException($"Status must be one of: {string.Join(", ", validStatuses)}", nameof(status), status);
-        }
-
         // Get existing leave request for "before" snapshot
         var existingLeaveRequest = await _repository.GetByIdAsync(id);
         if (existingLeaveRequest == null)
         {
-            throw new EntityNotFoundException("LeaveRequest", id);
+            throw new InvalidOperationException($"Leave request with ID {id} not found");
         }
 
         // Generate event ID first

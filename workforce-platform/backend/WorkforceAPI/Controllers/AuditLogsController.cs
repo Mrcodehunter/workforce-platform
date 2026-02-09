@@ -6,6 +6,7 @@ namespace WorkforceAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Produces("application/json")]
 public class AuditLogsController : ControllerBase
 {
     private readonly IAuditLogService _auditLogService;
@@ -27,6 +28,7 @@ public class AuditLogsController : ControllerBase
     /// <param name="limit">Limit number of results (default: 100)</param>
     /// <returns>List of audit logs</returns>
     [HttpGet]
+    [ProducesResponseType(typeof(IEnumerable<AuditLog>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<AuditLog>>> GetAll(
         [FromQuery] string? entityType = null,
         [FromQuery] string? eventType = null,
@@ -94,6 +96,7 @@ public class AuditLogsController : ControllerBase
     /// <param name="limit">Number of recent logs to return (default: 50)</param>
     /// <returns>List of recent audit logs</returns>
     [HttpGet("recent")]
+    [ProducesResponseType(typeof(IEnumerable<AuditLog>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<AuditLog>>> GetRecent([FromQuery] int limit = 50)
     {
         try
@@ -115,6 +118,8 @@ public class AuditLogsController : ControllerBase
     /// <param name="entityId">Entity ID</param>
     /// <returns>List of audit logs for the entity</returns>
     [HttpGet("entity/{entityType}/{entityId}")]
+    [ProducesResponseType(typeof(IEnumerable<AuditLog>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<IEnumerable<AuditLog>>> GetByEntity(string entityType, string entityId)
     {
         try
@@ -140,6 +145,7 @@ public class AuditLogsController : ControllerBase
     /// <param name="eventType">Event type (e.g., employee.created, project.updated)</param>
     /// <returns>List of audit logs for the event type</returns>
     [HttpGet("event/{eventType}")]
+    [ProducesResponseType(typeof(IEnumerable<AuditLog>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IEnumerable<AuditLog>>> GetByEventType(string eventType)
     {
         try
