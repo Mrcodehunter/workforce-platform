@@ -134,12 +134,15 @@ workforce-platform/
 - **PostgreSQL 16** - Relational database
 - **MongoDB 7** - Document database
 - **RabbitMQ 3.12** - Message broker
+- **Redis 7** - Caching
 - **Docker & Docker Compose** - Containerization
 - **Nginx** - Frontend web server
 
 ### Worker Services
 - **.NET BackgroundService** - Audit logging
 - **Node.js** - Report generation
+
+> **Note**: For complete library documentation with versions and rationale, see [THIRD_PARTY_LIBRARIES.md](./THIRD_PARTY_LIBRARIES.md).
 
 ## 📊 Database Design
 
@@ -305,7 +308,7 @@ docker compose up --build
 - Dual database strategy (PostgreSQL + MongoDB)
 - Containerized deployment with Docker Compose
 
-### 🚧 Planned (See AI-WORKFLOW.md)
+### 🚧 Planned (See [KNOWN-ISSUES.md](./KNOWN-ISSUES.md))
 - Authentication and authorization
 - Role-based access control
 - Real-time notifications
@@ -313,16 +316,9 @@ docker compose up --build
 - E2E tests
 - Cloud deployment
 
-## 🔒 Security Notes
+For a concise overview of incomplete features, limitations, and implementation plans, see [KNOWN-ISSUES.md](./KNOWN-ISSUES.md).
 
-⚠️ **This is a development setup**. For production:
-- Change all default passwords in `.env`
-- Enable HTTPS
-- Implement authentication/authorization
-- Use secrets management (Azure Key Vault, AWS Secrets Manager)
-- Configure CORS properly
-- Enable rate limiting
-- Set up database backups
+
 
 ## 🐛 Troubleshooting
 
@@ -380,8 +376,8 @@ This project was built using AI coding assistants. See [AI-WORKFLOW.md](./AI-WOR
 
 ## 📝 Documentation
 
-- **[Documentation Index](./DOCUMENTATION.md)** - Complete documentation overview
-- **[Setup Guide](./SETUP.md)** - Detailed setup instructions
+- **[Known Issues](./KNOWN-ISSUES.md)** - Concise overview of incomplete features and limitations
+- **[Third-Party Libraries](./THIRD_PARTY_LIBRARIES.md)** - Quick reference of all libraries with versions and rationale
 - **[AI Workflow](./AI-WORKFLOW.md)** - AI-assisted development process
 - **[Changelog](./CHANGELOG.md)** - Version history and changes
 - **[Frontend Documentation](./frontend/README.md)** - Frontend setup and development
@@ -405,15 +401,10 @@ This project is for educational purposes as part of a distributed systems assign
 
 ## 👤 Author
 
-[Your Name]
-- Email: your.email@example.com
-- GitHub: [@yourusername](https://github.com/yourusername)
+[Murad Hossen]
+- Email: muradhossen5267@gmail.com
+- GitHub: [@yourusername](https://github.com/Mrcodehunter)
 
-## 🙏 Acknowledgments
-
-- Assignment provided by [Company/Institution Name]
-- Built with AI assistance (Claude, GitHub Copilot)
-- Inspired by modern microservices architectures
 
 ---
 
