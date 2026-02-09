@@ -1,6 +1,6 @@
 # Workforce Management Platform
 
-[![CI/CD Pipeline](https://github.com/YOUR_USERNAME/workforce-platform/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/YOUR_USERNAME/workforce-platform/actions/workflows/ci-cd.yml)
+[![CI/CD Pipeline](https://github.com/Mrcodehunter/workforce-platform/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Mrcodehunter/workforce-platform/actions/workflows/ci-cd.yml)
 
 A distributed workforce management system built with .NET, React, TypeScript, PostgreSQL, MongoDB, and RabbitMQ. This platform handles employee management, project tracking, task management, and leave/time-off requests using an event-driven microservices architecture.
 
