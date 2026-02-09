@@ -44,17 +44,12 @@ That's it! Docker will handle all other dependencies.
    cd workforce-platform
    ```
 
-2. **Create environment file**
-   ```bash
-   cp .env.example .env
-   ```
-   
-   Optional: Edit `.env` to customize database passwords and ports
-
-3. **Start the entire system**
+2. **Start the entire system**
    ```bash
    docker compose up --build
    ```
+   
+   The `.env` file is already included in the repository with default configuration. You can optionally edit `.env` to customize database passwords and ports if needed.
 
 4. **Access the application**
    - **Frontend**: http://localhost:3000
@@ -108,7 +103,7 @@ workforce-platform/
 ├── .github/
 │   └── workflows/             # CI/CD pipelines
 ├── docker-compose.yml         # Docker orchestration
-├── .env.example               # Environment template
+├── .env                       # Environment configuration
 └── README.md
 ```
 
