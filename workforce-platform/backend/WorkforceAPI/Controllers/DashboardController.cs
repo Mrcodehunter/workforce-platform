@@ -5,7 +5,6 @@ namespace WorkforceAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Produces("application/json")]
 public class DashboardController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;
@@ -22,7 +21,6 @@ public class DashboardController : ControllerBase
     /// </summary>
     /// <returns>Dashboard summary including statistics and recent activity</returns>
     [HttpGet("summary")]
-    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
     public async Task<ActionResult<object>> GetSummary()
     {
         try

@@ -3,6 +3,7 @@ using WorkforceAPI.Models;
 using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Repositories;
 using WorkforceAPI.Helpers;
+using WorkforceAPI.Exceptions;
 using Workforce.Shared.Cache;
 using Workforce.Shared.EventPublisher;
 using Workforce.Shared.Events;
@@ -224,10 +225,28 @@ public class TaskService : ITaskService
 
     public async Task<TaskItem> UpdateTaskStatusAsync(Guid taskId, string status)
     {
+        // Validate input
+        if (taskId == Guid.Empty)
+        {
+            throw new ValidationException("Task ID is required", nameof(taskId));
+        }
+
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            throw new ValidationException("Status is required", nameof(status));
+        }
+
+        // Validate status value
+        var validStatuses = new[] { "ToDo", "InProgress", "InReview", "Done", "Cancelled" };
+        if (!validStatuses.Contains(status))
+        {
+            throw new ValidationException($"Invalid status. Must be one of: {string.Join(", ", validStatuses)}", nameof(status), status);
+        }
+
         var task = await _repository.GetByIdAsync(taskId);
         if (task == null)
         {
-            throw new InvalidOperationException($"Task with ID {taskId} not found");
+            throw new EntityNotFoundException("Task", taskId);
         }
 
         // Generate event ID first

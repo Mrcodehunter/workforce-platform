@@ -3,6 +3,7 @@ using WorkforceAPI.Models;
 using WorkforceAPI.Models.DTOs;
 using WorkforceAPI.Repositories;
 using WorkforceAPI.Helpers;
+using WorkforceAPI.Exceptions;
 using Workforce.Shared.Cache;
 using Workforce.Shared.EventPublisher;
 using Workforce.Shared.Events;
@@ -92,11 +93,18 @@ public class EmployeeService : IEmployeeService
         };
     }
 
-    public async Task<EmployeeDetailDto?> GetByIdAsync(Guid id)
+    public async Task<EmployeeDetailDto> GetByIdAsync(Guid id)
     {
+        if (id == Guid.Empty)
+        {
+            throw new ValidationException("Employee ID is required", nameof(id));
+        }
+
         var employee = await _repository.GetByIdAsync(id);
         if (employee == null)
-            return null;
+        {
+            throw new EntityNotFoundException("Employee", id);
+        }
 
         return new EmployeeDetailDto
         {
@@ -187,10 +195,15 @@ public class EmployeeService : IEmployeeService
 
     public async Task<Employee> UpdateAsync(Employee employee)
     {
+        if (employee.Id == Guid.Empty)
+        {
+            throw new ValidationException("Employee ID is required", nameof(employee.Id));
+        }
+
         var existingEmployee = await _repository.GetByIdAsync(employee.Id);
         if (existingEmployee == null)
         {
-            throw new InvalidOperationException($"Employee with ID {employee.Id} not found");
+            throw new EntityNotFoundException("Employee", employee.Id);
         }
 
         // Generate event ID first
